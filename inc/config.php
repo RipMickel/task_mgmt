@@ -1,19 +1,19 @@
 <?php
-// inc/config.php
-// DB settings - change to your credentials
-define('DB_HOST', '127.0.0.1');
-define('DB_NAME', 'task_manager');
-define('DB_USER', 'root');
-define('DB_PASS', ''); // set your password
+$host = 'localhost';
+$db   = 'task_mgmt';
+$user = 'root';
+$pass = '';
+$charset = 'utf8mb4';
 
-// Site
-define('SITE_NAME', 'Task Manager - Curriculum & Instruction');
-define('ALLOWED_EMAIL_DOMAIN', 'nbsc.edu.ph'); // <--- only this domain allowed
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+];
 
-// Google OAuth (optional)
-// If you plan to use Google OAuth, set these. Otherwise leave blank.
-define('GOOGLE_CLIENT_ID', '');     // e.g. your-client-id.apps.googleusercontent.com
-define('GOOGLE_CLIENT_SECRET', ''); // your client secret
-define('GOOGLE_REDIRECT_URI', 'https://yourdomain.com/auth/google_callback.php'); // set to your callback
-
-session_start();
+try {
+    $pdo = new PDO($dsn, $user, $pass, $options);
+} catch (\PDOException $e) {
+    throw new \PDOException($e->getMessage(), (int)$e->getCode());
+}
