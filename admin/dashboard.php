@@ -20,6 +20,8 @@ if (!check_role('admin')) {
     <h2>Welcome Admin, <?= $_SESSION['name'] ?></h2>
     <ul>
         <li><a href="manage_users.php">Manage Users</a></li>
+        <li><a href="roles.php">Manage Roles</a></li>
+
         <li><a href="../auth/logout.php">Logout</a></li>
     </ul>
 </body>
