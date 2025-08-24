@@ -9,8 +9,8 @@ if (!check_role('instructor')) {
     exit;
 }
 
-// Fetch all task history with file uploads
-$stmt = $pdo->prepare("SELECT th.*, t.title as task_title, t.description as task_desc, u.name as instructor_name, uc.name as coordinator_name
+// Fetch all task history with file uploads and academic year
+$stmt = $pdo->prepare("SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
                        FROM task_history th
                        JOIN tasks t ON th.task_id = t.id
                        JOIN users u ON t.assigned_to = u.id
@@ -156,6 +156,7 @@ $taskHistory = $stmt->fetchAll();
                             <th>Description</th>
                             <th>Instructor</th>
                             <th>Coordinator</th>
+                            <th>Academic Year</th>
                             <th>Completed At</th>
                             <th>File</th>
                         </tr>
@@ -167,6 +168,7 @@ $taskHistory = $stmt->fetchAll();
                                 <td><?= htmlspecialchars($task['task_desc']) ?></td>
                                 <td><?= htmlspecialchars($task['instructor_name']) ?></td>
                                 <td><?= htmlspecialchars($task['coordinator_name']) ?></td>
+                                <td><?= htmlspecialchars($task['academic_year']) ?></td>
                                 <td><?= htmlspecialchars($task['completed_at']) ?></td>
                                 <td>
                                     <?php if (!empty($task['file_path'])): ?>
