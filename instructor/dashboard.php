@@ -26,7 +26,7 @@ $filesStmt = $pdo->prepare("SELECT th.*, t.title as task_title, t.academic_year,
 $filesStmt->execute([$_SESSION['user_id']]);
 $uploadedFiles = $filesStmt->fetchAll();
 
-// Handle marking task as completed with PDF upload
+// Handle marking task as completed with file upload
 if (isset($_POST['complete_task'])) {
     $task_id = $_POST['task_id'];
     $file_path = null;
@@ -34,25 +34,17 @@ if (isset($_POST['complete_task'])) {
     if (isset($_FILES['task_file']) && $_FILES['task_file']['error'] === UPLOAD_ERR_OK) {
         $fileTmpPath = $_FILES['task_file']['tmp_name'];
         $fileName = $_FILES['task_file']['name'];
-        $fileType = $_FILES['task_file']['type'];
-        $fileNameCmps = explode(".", $fileName);
-        $fileExtension = strtolower(end($fileNameCmps));
 
-        // Only allow PDF files
-        if ($fileExtension === 'pdf' && $fileType === 'application/pdf') {
-            $uploadDir = '../uploads/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+        $uploadDir = '../uploads/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
-            $newFileName = time() . '_' . basename($fileName);
-            $dest_path = $uploadDir . $newFileName;
+        $newFileName = time() . '_' . basename($fileName);
+        $dest_path = $uploadDir . $newFileName;
 
-            if (move_uploaded_file($fileTmpPath, $dest_path)) {
-                $file_path = $newFileName;
-            } else {
-                $error = "There was an error moving the uploaded file.";
-            }
+        if (move_uploaded_file($fileTmpPath, $dest_path)) {
+            $file_path = $newFileName;
         } else {
-            $error = "Only PDF files are allowed.";
+            $error = "There was an error moving the uploaded file.";
         }
     } else {
         $error = "No file uploaded.";
@@ -60,9 +52,24 @@ if (isset($_POST['complete_task'])) {
 
     if (!isset($error)) {
         $pdo->prepare("UPDATE tasks SET status='completed' WHERE id=?")->execute([$task_id]);
-        $pdo->prepare("INSERT INTO task_history (task_id, completed_at, file_path) VALUES (?,NOW(),?)")->execute([$task_id, $file_path]);
+        $pdo->prepare("INSERT INTO task_history (task_id, completed_at, file_path) VALUES (?,NOW(),?)")
+            ->execute([$task_id, $file_path]);
         header("Location: dashboard.php");
         exit();
+    }
+}
+
+// Check for upcoming deadlines (within 2 days)
+$upcomingTasks = [];
+$currentDate = new DateTime();
+foreach ($tasks as $task) {
+    if ($task['status'] === 'pending') {
+        $deadline = new DateTime($task['deadline']);
+        $interval = $currentDate->diff($deadline)->days;
+        $isFuture = $deadline > $currentDate;
+        if ($interval <= 2 && $isFuture) {
+            $upcomingTasks[] = $task['title'] . " (Deadline: " . $task['deadline'] . ")";
+        }
     }
 }
 ?>
@@ -81,11 +88,12 @@ if (isset($_POST['complete_task'])) {
         <aside class="sidebar">
             <h2>Instructor Panel</h2>
             <ul>
-                <li><a href="dashboard.php">Dashboard</a></li>
-                <li><a href="task_history.php">Task History of All Instructors</a></li>
-                <li><a href="../auth/logout.php">Logout</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">Task History of All Instructors</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'logout.php' ? 'active' : '' ?>"><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
+
 
         <main class="main-content">
             <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
@@ -141,37 +149,19 @@ if (isset($_POST['complete_task'])) {
                 <?php endif; ?>
             </section>
 
-            <section class="uploaded-files">
-                <h2>Other Instructors' Uploaded Files</h2>
-                <?php if (count($uploadedFiles) > 0): ?>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Task</th>
-                                <th>Instructor</th>
-                                <th>Academic Year</th>
-                                <th>Uploaded File</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($uploadedFiles as $file): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($file['task_title']) ?></td>
-                                    <td><?= htmlspecialchars($file['instructor_name']) ?></td>
-                                    <td><?= htmlspecialchars($file['academic_year']) ?></td>
-                                    <td><a href="../uploads/<?= htmlspecialchars($file['file_path']) ?>" target="_blank"><?= htmlspecialchars($file['file_path']) ?></a></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php else: ?>
-                    <p>No uploaded files from other instructors.</p>
-                <?php endif; ?>
-            </section>
+
         </main>
     </div>
 
     <script src="../assets/js/main.js"></script>
+    <script>
+        <?php if (!empty($upcomingTasks)): ?>
+            let tasks = <?php echo json_encode($upcomingTasks); ?>;
+            let message = "⚠️ Upcoming Deadlines:\n\n" + tasks.join("\n");
+            alert(message);
+        <?php endif; ?>
+    </script>
+
 </body>
 
 </html>

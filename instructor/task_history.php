@@ -17,6 +17,27 @@ $stmt = $pdo->prepare("SELECT th.*, t.title as task_title, t.description as task
                        JOIN users uc ON t.assigned_by = uc.id
                        ORDER BY th.completed_at DESC");
 $stmt->execute();
+
+// Handle academic year search
+$academicYear = isset($_GET['academic_year']) ? $_GET['academic_year'] : '';
+
+// Fetch all task history with optional academic year filter
+$sql = "SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
+        FROM task_history th
+        JOIN tasks t ON th.task_id = t.id
+        JOIN users u ON t.assigned_to = u.id
+        JOIN users uc ON t.assigned_by = uc.id";
+
+if ($academicYear) {
+    $sql .= " WHERE t.academic_year = ?";
+    $sql .= " ORDER BY th.completed_at DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$academicYear]);
+} else {
+    $sql .= " ORDER BY th.completed_at DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+}
 $taskHistory = $stmt->fetchAll();
 ?>
 
@@ -40,11 +61,16 @@ $taskHistory = $stmt->fetchAll();
 
         .sidebar {
             width: 220px;
-            background-color: #2c3e50;
-            color: #fff;
+            background-color: #fff;
+            /* White background */
+            color: #000;
+            /* Black text */
             min-height: 100vh;
             padding: 20px;
+            border-right: 2px solid #ddd;
+            /* Optional: adds a subtle border */
         }
+
 
         .sidebar h2 {
             text-align: center;
@@ -56,22 +82,24 @@ $taskHistory = $stmt->fetchAll();
             padding: 0;
         }
 
-        .sidebar ul li {
-            margin-bottom: 15px;
-        }
-
         .sidebar ul li a {
-            color: #fff;
+            color: #000;
+            /* Default text color */
             text-decoration: none;
-            display: block;
-            padding: 8px;
-            border-radius: 5px;
-            transition: background 0.3s;
+            transition: 0.2s;
         }
 
         .sidebar ul li a:hover {
-            background-color: #34495e;
+            color: #2e8b57;
+            /* Forest Green on hover */
         }
+
+        .sidebar ul li.active a {
+            color: #008000;
+            font-weight: bold;
+            /* Optional: makes the active link bold */
+        }
+
 
         .main-content {
             flex: 1;
@@ -98,8 +126,8 @@ $taskHistory = $stmt->fetchAll();
         }
 
         table th {
-            background-color: #2980b9;
-            color: #fff;
+            background-color: #f4f4f4;
+            color: black;
         }
 
         table tr:hover {
@@ -108,13 +136,11 @@ $taskHistory = $stmt->fetchAll();
 
         a.btn,
         a {
-            color: #2980b9;
+            color: blue;
             text-decoration: none;
         }
 
-        a.btn:hover {
-            text-decoration: underline;
-        }
+
 
         .alert {
             padding: 10px;
@@ -128,7 +154,6 @@ $taskHistory = $stmt->fetchAll();
         }
 
         .alert-success {
-            background-color: #2ecc71;
             color: white;
         }
     </style>
@@ -139,14 +164,21 @@ $taskHistory = $stmt->fetchAll();
         <aside class="sidebar">
             <h2>Instructor Panel</h2>
             <ul>
-                <li><a href="dashboard.php">Dashboard</a></li>
-                <li><a href="task_history.php">Task History of All Instructors</a></li>
-                <li><a href="../auth/logout.php">Logout</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">Task History of All Instructors</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'logout.php' ? 'active' : '' ?>"><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
 
+
         <main class="main-content">
             <h1>Task History of All Instructors</h1>
+            <form method="GET" class="search-form">
+                <label for="academic_year">Search by Academic Year:</label>
+                <input type="text" name="academic_year" id="academic_year" value="<?= htmlspecialchars($academicYear) ?>" placeholder="e.g., 2025-2026">
+                <button type="submit">Search</button>
+                <a href="task_history.php" class="btn">Reset</a>
+            </form>
 
             <?php if (count($taskHistory) > 0): ?>
                 <table>
