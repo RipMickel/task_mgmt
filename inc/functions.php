@@ -1,28 +1,18 @@
 <?php
-require_once "config.php";
-
-function isLoggedIn()
+function is_logged_in()
 {
     return isset($_SESSION['user_id']);
 }
 
-function isRole($role)
+function check_role($role)
 {
     return isset($_SESSION['role']) && $_SESSION['role'] === $role;
 }
 
-function redirectIfNotLoggedIn()
+function redirect_if_not_logged_in()
 {
-    if (!isLoggedIn()) {
-        header("Location: auth/login.php");
-        exit;
+    if (!is_logged_in()) {
+        header("Location: /index.php");
+        exit();
     }
-}
-
-function getUsersByRole($role)
-{
-    global $pdo;
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE role = ?");
-    $stmt->execute([$role]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
