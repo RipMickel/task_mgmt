@@ -90,13 +90,17 @@ foreach ($tasks as $task) {
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">Task History of All Instructors</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'logout.php' ? 'active' : '' ?>"><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
 
-
         <main class="main-content">
             <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
+
+            <?php if (!empty($_SESSION['profile_image'])): ?>
+                <img src="../uploads/profiles/<?= htmlspecialchars($_SESSION['profile_image']) ?>" alt="Profile" style="width:100px;height:100px;border-radius:50%;">
+            <?php endif; ?>
 
             <?php if (isset($error)): ?>
                 <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
@@ -148,8 +152,6 @@ foreach ($tasks as $task) {
                     <p>No tasks assigned yet.</p>
                 <?php endif; ?>
             </section>
-
-
         </main>
     </div>
 
@@ -161,7 +163,6 @@ foreach ($tasks as $task) {
             alert(message);
         <?php endif; ?>
     </script>
-
 </body>
 
 </html>
