@@ -24,3 +24,18 @@ if ($role === 'coordinator' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$_POST['id']]);
     }
 }
+
+// Fetch schedules
+if ($role === 'instructor') {
+    $stmt = $pdo->prepare("SELECT cs.*, u.name as instructor_name 
+                           FROM class_schedule cs
+                           JOIN users u ON cs.instructor_id = u.id
+                           WHERE cs.instructor_id = ?");
+    $stmt->execute([$user_id]);
+} else {
+    $stmt = $pdo->query("SELECT cs.*, u.name as instructor_name 
+                         FROM class_schedule cs
+                         JOIN users u ON cs.instructor_id = u.id");
+}
+
+$schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
