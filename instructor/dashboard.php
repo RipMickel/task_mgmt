@@ -81,6 +81,21 @@ foreach ($tasks as $task) {
     <meta charset="UTF-8">
     <title>Instructor Dashboard</title>
     <link rel="stylesheet" href="../instructor/instructor.css">
+    <style>
+        .welcome-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .welcome-container img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    </style>
 </head>
 
 <body>
@@ -96,11 +111,13 @@ foreach ($tasks as $task) {
         </aside>
 
         <main class="main-content">
-            <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
+            <div class="welcome-container">
+                <img src="../uploads/profiles/<?= htmlspecialchars($_SESSION['profile_image']) ?>" alt="Profile">
 
-            <?php if (!empty($_SESSION['profile_image'])): ?>
-                <img src="../uploads/profiles/<?= htmlspecialchars($_SESSION['profile_image']) ?>" alt="Profile" style="width:100px;height:100px;border-radius:50%;">
-            <?php endif; ?>
+                <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
+                <?php if (!empty($_SESSION['profile_image'])): ?>
+                <?php endif; ?>
+            </div>
 
             <?php if (isset($error)): ?>
                 <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
