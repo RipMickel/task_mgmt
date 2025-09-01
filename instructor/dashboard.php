@@ -112,12 +112,16 @@ foreach ($tasks as $task) {
 
         <main class="main-content">
             <div class="welcome-container">
-                <img src="../uploads/profiles/<?= htmlspecialchars($_SESSION['profile_image']) ?>" alt="Profile">
-
+                <?php
+                // fallback if profile image is missing
+                $profilePic = !empty($_SESSION['profile_image'])
+                    ? "../uploads/profiles/" . $_SESSION['profile_image']
+                    : "../assets/images/default.png";
+                ?>
+                <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile">
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
-                <?php if (!empty($_SESSION['profile_image'])): ?>
-                <?php endif; ?>
             </div>
+
 
             <?php if (isset($error)): ?>
                 <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
