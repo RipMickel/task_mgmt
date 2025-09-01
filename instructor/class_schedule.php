@@ -56,7 +56,7 @@ $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2><?= ucfirst($role) ?> Panel</h2>
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
-                <li><a href="task_history.php">Task History</a></li>
+                <li><a href="task_history.php">Task History of All Instructors</a></li>
                 <li class="active"><a href="class_schedule.php">Class Schedule</a></li>
                 <li><a href="edit_profile.php">Edit Profile</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
