@@ -38,12 +38,87 @@ $assigned_tasks = $tasks->fetchAll();
 <head>
     <title>Coordinator Dashboard</title>
     <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: #2c3e50;
+            color: #fff;
+            padding: 20px 0;
+            flex-shrink: 0;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 20px;
+            letter-spacing: 1px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 10px 0;
+        }
+
+        .sidebar ul li a {
+            display: block;
+            padding: 12px 20px;
+            color: #ecf0f1;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        .sidebar ul li a:hover,
+        .sidebar ul li.active a {
+            background: #34495e;
+            border-left: 4px solid #1abc9c;
+        }
+
+        /* Main content */
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+        }
+
+        .welcome-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .welcome-container img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 2px solid #ddd;
+        }
+
+        .welcome-container h1 {
+            font-size: 22px;
+            margin: 0;
+        }
+
         .form-section {
             background: #fff;
             padding: 20px;
             margin-bottom: 25px;
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .form-section h3 {
@@ -61,7 +136,7 @@ $assigned_tasks = $tasks->fetchAll();
         }
 
         form button {
-            background: #0066cc;
+            background: #1abc9c;
             color: #fff;
             padding: 10px 16px;
             border: none;
@@ -70,7 +145,7 @@ $assigned_tasks = $tasks->fetchAll();
         }
 
         form button:hover {
-            background: #004c99;
+            background: #16a085;
         }
 
         table {
@@ -80,6 +155,7 @@ $assigned_tasks = $tasks->fetchAll();
             background: #fff;
             border-radius: 12px;
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         table th,
