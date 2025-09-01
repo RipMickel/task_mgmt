@@ -142,9 +142,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <h2>Coordinator Panel</h2>
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
+                <li><a href="assign_task.php">Assign Task</a></li>
                 <li><a href="class_schedule.php">Class Schedule</a></li>
                 <li class="active"><a href="edit_profile.php">Edit Profile</a></li>
-                <li><a href="user_logs.php">User Logs</a></li>
+                <li><a href="user_logs.php">Recent Logins</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>

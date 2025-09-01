@@ -9,7 +9,7 @@ if (!check_role('coordinator')) {
     exit;
 }
 
-// ✅ Fetch only recent login logs
+// Fetch only recent login logs
 $stmt = $pdo->prepare("SELECT l.*, u.name, u.role 
                        FROM user_logs l 
                        JOIN users u ON l.user_id = u.id 
@@ -25,7 +25,7 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <head>
     <meta charset="UTF-8">
-    <title>User Logs - Coordinator</title>
+    <title>Recent Logins - Coordinator</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -134,16 +134,17 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2>Coordinator Panel</h2>
             <ul>
                 <li><a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="assign_task.php">Assign Task</a></li>
                 <li><a href="class_schedule.php"><i class="fas fa-calendar"></i> Class Schedule</a></li>
                 <li><a href="edit_profile.php"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
-                <li class="active"><a href="user_logs.php"><i class="fas fa-list"></i> User Logs</a></li>
+                <li class="active"><a href="user_logs.php"><i class="fas fa-list"></i>Recent Logins</a></li>
                 <li><a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </aside>
 
         <!-- Main content -->
         <main class="main-content">
-            <h1>📜 Recent Logins</h1>
+            <h1>Recent Logins</h1>
             <?php if (count($logs) > 0): ?>
                 <table>
                     <tr>

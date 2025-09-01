@@ -35,6 +35,10 @@ $stmt = $pdo->query("SELECT cs.*, u.name as instructor_name
                      FROM class_schedule cs
                      JOIN users u ON cs.instructor_id = u.id");
 $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ✅ Fetch all instructors for dropdown
+$instructorStmt = $pdo->query("SELECT id, name FROM users WHERE role = 'instructor'");
+$instructors = $instructorStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -139,6 +143,7 @@ $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         input,
+        select,
         button {
             padding: 8px 10px;
             margin: 5px 0;
@@ -148,7 +153,7 @@ $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         input[type="text"],
         input[type="number"],
-        input[type="date"] {
+        select {
             width: 180px;
         }
 
@@ -177,11 +182,11 @@ $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2>Coordinator Panel</h2>
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_task.php' ? 'active' : '' ?>"><a href="assign_task.php">Assign Task</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'class_schedule.php' ? 'active' : '' ?>"><a href="class_schedule.php">Class Schedule</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'user_logs.php' ? 'active' : '' ?>"><a href="user_logs.php">User Logs</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'user_logs.php' ? 'active' : '' ?>"><a href="user_logs.php">Recent Logins</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
-
             </ul>
         </aside>
 
@@ -216,7 +221,17 @@ $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <input type="hidden" name="id" value="<?= $sched['id'] ?>">
                                         <input type="text" name="course" value="<?= htmlspecialchars($sched['course']) ?>" required>
                                         <input type="text" name="section" value="<?= htmlspecialchars($sched['section']) ?>" required>
-                                        <input type="number" name="instructor_id" value="<?= htmlspecialchars($sched['instructor_id']) ?>" required>
+
+                                        <!-- Dropdown instead of typing ID -->
+                                        <select name="instructor_id" required>
+                                            <option value="">-- Select Instructor --</option>
+                                            <?php foreach ($instructors as $inst): ?>
+                                                <option value="<?= $inst['id'] ?>" <?= $inst['id'] == $sched['instructor_id'] ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($inst['name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+
                                         <input type="text" name="day" value="<?= htmlspecialchars($sched['day']) ?>" required>
                                         <input type="text" name="time" value="<?= htmlspecialchars($sched['time']) ?>" required>
                                         <input type="text" name="room" value="<?= htmlspecialchars($sched['room']) ?>" required>
@@ -240,7 +255,15 @@ $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <form method="post">
                 <input type="text" name="course" placeholder="Course" required>
                 <input type="text" name="section" placeholder="Section" required>
-                <input type="number" name="instructor_id" placeholder="Instructor ID" required>
+
+                <!-- Dropdown for instructor -->
+                <select name="instructor_id" required>
+                    <option value="">-- Select Instructor --</option>
+                    <?php foreach ($instructors as $inst): ?>
+                        <option value="<?= $inst['id'] ?>"><?= htmlspecialchars($inst['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+
                 <input type="text" name="day" placeholder="Day" required>
                 <input type="text" name="time" placeholder="Time" required>
                 <input type="text" name="room" placeholder="Room" required>

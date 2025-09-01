@@ -119,10 +119,10 @@ foreach ($userCounts as $row) {
             <h2>Coordinator Panel</h2>
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_task.php' ? 'active' : '' ?>"><a href="assign_task.php">Assign Task</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'class_schedule.php' ? 'active' : '' ?>"><a href="class_schedule.php">Class Schedule</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'user_logs.php' ? 'active' : '' ?>"><a href="user_logs.php">User Logs</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_task.php' ? 'active' : '' ?>"><a href="assign_task.php">Assign Task</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'user_logs.php' ? 'active' : '' ?>"><a href="user_logs.php">Recent Logins</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
@@ -140,7 +140,7 @@ foreach ($userCounts as $row) {
 
             <!-- User Counts Chart -->
             <div class="chart-container">
-                <h2>👥 User Count by Role</h2>
+                <h2> Users</h2>
                 <canvas id="userChart"></canvas>
             </div>
         </main>
