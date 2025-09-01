@@ -9,10 +9,20 @@ if (!check_role('coordinator')) {
     exit;
 }
 
+// ✅ Fetch only recent login logs
+$stmt = $pdo->prepare("SELECT l.*, u.name, u.role 
+                       FROM user_logs l 
+                       JOIN users u ON l.user_id = u.id 
+                       WHERE l.action = 'User logged in'
+                       ORDER BY l.created_at DESC");
+$stmt->execute();
+$logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // ✅ Fetch user counts by role
 $countStmt = $pdo->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
 $userCounts = $countStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Prepare data for chart
 $roles = [];
 $counts = [];
 foreach ($userCounts as $row) {
@@ -21,10 +31,12 @@ foreach ($userCounts as $row) {
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Coordinator Dashboard</title>
+    <meta charset="UTF-8">
+    <title>User Logs - Coordinator</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -83,23 +95,35 @@ foreach ($userCounts as $row) {
             padding: 30px;
         }
 
-        .welcome-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 25px;
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
         }
 
-        .welcome-container img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            margin-right: 15px;
-            border: 2px solid #ddd;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .welcome-container h1 {
-            font-size: 22px;
-            margin: 0;
+        table th,
+        table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        table th {
+            background: #1abc9c;
+            color: white;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
         }
 
         .chart-container {
@@ -115,30 +139,43 @@ foreach ($userCounts as $row) {
 
 <body>
     <div class="dashboard-container">
+        <!-- Sidebar -->
         <aside class="sidebar">
             <h2>Coordinator Panel</h2>
             <ul>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'class_schedule.php' ? 'active' : '' ?>"><a href="class_schedule.php">Class Schedule</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'user_logs.php' ? 'active' : '' ?>"><a href="user_logs.php">User Logs</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_task.php' ? 'active' : '' ?>"><a href="assign_task.php">Assign Task</a></li>
-                <li><a href="../auth/logout.php">Logout</a></li>
+                <li><a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="class_schedule.php"><i class="fas fa-calendar"></i> Class Schedule</a></li>
+                <li><a href="edit_profile.php"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
+                <li class="active"><a href="user_logs.php"><i class="fas fa-list"></i> User Logs</a></li>
+                <li><a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </aside>
 
+        <!-- Main content -->
         <main class="main-content">
-            <div class="welcome-container">
-                <?php
-                $profilePic = !empty($_SESSION['profile_image'])
-                    ? "../uploads/profiles/" . $_SESSION['profile_image']
-                    : "../assets/images/default.png";
-                ?>
-                <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile">
-                <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
-            </div>
+            <h1>📜 Recent Logins</h1>
+            <?php if (count($logs) > 0): ?>
+                <table>
+                    <tr>
+                        <th>User</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                        <th>Date & Time</th>
+                    </tr>
+                    <?php foreach ($logs as $log): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($log['name']) ?></td>
+                            <td><?= htmlspecialchars($log['role']) ?></td>
+                            <td><?= htmlspecialchars($log['action']) ?></td>
+                            <td><?= htmlspecialchars($log['created_at']) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </table>
+            <?php else: ?>
+                <p>No login activity found.</p>
+            <?php endif; ?>
 
-            <!-- User Counts Chart -->
+            <!-- Chart Section -->
             <div class="chart-container">
                 <h2>👥 User Count by Role</h2>
                 <canvas id="userChart"></canvas>
@@ -149,25 +186,24 @@ foreach ($userCounts as $row) {
     <script>
         const ctx = document.getElementById('userChart').getContext('2d');
         const userChart = new Chart(ctx, {
-            type: 'bar',
+            type: 'pie',
             data: {
                 labels: <?= json_encode($roles) ?>,
                 datasets: [{
                     label: 'User Count',
                     data: <?= json_encode($counts) ?>,
-                    backgroundColor: ['#1abc9c', '#3498db', '#e74c3c']
+                    backgroundColor: [
+                        '#1abc9c',
+                        '#3498db',
+                        '#e74c3c'
+                    ]
                 }]
             },
             options: {
                 responsive: true,
                 plugins: {
                     legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
+                        position: 'bottom'
                     }
                 }
             }

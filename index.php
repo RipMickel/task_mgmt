@@ -16,6 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['name'] = $user['name'];
         $_SESSION['profile_image'] = !empty($user['profile_image']) ? $user['profile_image'] : null;
 
+        // 🔥 Insert login log into user_logs
+        $logStmt = $pdo->prepare("INSERT INTO user_logs (user_id, action) VALUES (?, ?)");
+        $logStmt->execute([$user['id'], 'User logged in']);
 
         // Role-based redirection
         switch ($user['role']) {
