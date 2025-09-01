@@ -18,17 +18,7 @@ $stmt = $pdo->prepare("SELECT l.*, u.name, u.role
 $stmt->execute();
 $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ✅ Fetch user counts by role
-$countStmt = $pdo->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
-$userCounts = $countStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Prepare data for chart
-$roles = [];
-$counts = [];
-foreach ($userCounts as $row) {
-    $roles[] = ucfirst($row['role']);
-    $counts[] = $row['count'];
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -175,40 +165,8 @@ foreach ($userCounts as $row) {
                 <p>No login activity found.</p>
             <?php endif; ?>
 
-            <!-- Chart Section -->
-            <div class="chart-container">
-                <h2>👥 User Count by Role</h2>
-                <canvas id="userChart"></canvas>
-            </div>
-        </main>
-    </div>
 
-    <script>
-        const ctx = document.getElementById('userChart').getContext('2d');
-        const userChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: <?= json_encode($roles) ?>,
-                datasets: [{
-                    label: 'User Count',
-                    data: <?= json_encode($counts) ?>,
-                    backgroundColor: [
-                        '#1abc9c',
-                        '#3498db',
-                        '#e74c3c'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-    </script>
+
 </body>
 
 </html>
