@@ -166,7 +166,6 @@ $taskHistory = $stmt->fetchAll();
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">Task History of All Instructors</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'class_schedule.php' ? 'active' : '' ?>"><a href="class_schedule.php">Class Schedule</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'logout.php' ? 'active' : '' ?>"><a href="../auth/logout.php">Logout</a></li>
             </ul>

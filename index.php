@@ -71,7 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit">Login</button>
         </form>
 
-        <p>Don't have an account? <a href="auth/register.php" class="btn">Register Here</a></p>
     </div>
 
     <script src="assets/js/main.js"></script>
