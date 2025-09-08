@@ -135,7 +135,6 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <ul>
                 <li><a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
                 <li><a href="assign_task.php">Assign Task</a></li>
-                <li><a href="class_schedule.php"><i class="fas fa-calendar"></i> Class Schedule</a></li>
                 <li><a href="edit_profile.php"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
                 <li class="active"><a href="user_logs.php"><i class="fas fa-list"></i>Recent Logins</a></li>
                 <li><a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
