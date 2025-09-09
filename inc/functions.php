@@ -16,3 +16,8 @@ function redirect_if_not_logged_in()
         exit();
     }
 }
+function log_action($pdo, $user_id, $action)
+{
+    $stmt = $pdo->prepare("INSERT INTO user_logs (user_id, action) VALUES (?, ?)");
+    $stmt->execute([$user_id, $action]);
+}

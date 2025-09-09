@@ -120,7 +120,7 @@ foreach ($userCounts as $row) {
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_task.php' ? 'active' : '' ?>"><a href="assign_task.php">Assign Task</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'manage_instructors.php' ? 'active' : '' ?>"><a href="class_schedule.php">Manage Instructors</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'manage_instructors.php' ? 'active' : '' ?>"><a href="manage_instructors.php">Manage Instructors</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'user_logs.php' ? 'active' : '' ?>"><a href="user_logs.php">Recent Logins</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
@@ -138,10 +138,15 @@ foreach ($userCounts as $row) {
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
             </div>
 
-            <!-- User Counts Chart -->
-            <div class="chart-container">
-                <h2> Users</h2>
-                <canvas id="userChart"></canvas>
+
+            <!-- Cards -->
+            <div class="cards">
+                <?php foreach ($userCounts as $uc): ?>
+                    <div class="card">
+                        <h3><?= ucfirst($uc['role']) ?>s</h3>
+                        <p><?= $uc['count'] ?></p>
+                    </div>
+                <?php endforeach; ?>
             </div>
         </main>
     </div>
