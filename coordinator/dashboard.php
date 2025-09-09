@@ -19,6 +19,20 @@ foreach ($userCounts as $row) {
     $roles[] = ucfirst($row['role']);
     $counts[] = $row['count'];
 }
+
+// ✅ Fetch instructor task progress
+$sql = "
+    SELECT 
+        u.name AS instructor_name,
+        COUNT(t.id) AS total_tasks,
+        SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) AS completed_tasks
+    FROM users u
+    LEFT JOIN tasks t ON u.id = t.assigned_to
+    WHERE u.role = 'instructor'
+    GROUP BY u.id, u.name
+";
+$stmt = $pdo->query($sql);
+$instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html>
@@ -102,6 +116,32 @@ foreach ($userCounts as $row) {
             margin: 0;
         }
 
+        .cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .card h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .card p {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
         .chart-container {
             margin-top: 40px;
             background: white;
@@ -109,6 +149,32 @@ foreach ($userCounts as $row) {
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             max-width: 600px;
+        }
+
+        .table-container {
+            margin-top: 40px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table th,
+        table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        table th {
+            background: #2c3e50;
+            color: white;
         }
     </style>
 </head>
@@ -138,7 +204,6 @@ foreach ($userCounts as $row) {
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
             </div>
 
-
             <!-- Cards -->
             <div class="cards">
                 <?php foreach ($userCounts as $uc): ?>
@@ -148,35 +213,41 @@ foreach ($userCounts as $row) {
                     </div>
                 <?php endforeach; ?>
             </div>
+
+            <!-- Instructor Task Progress -->
+            <div class="table-container">
+                <h2>Instructor Task Progress</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Instructor</th>
+                            <th>Total Tasks</th>
+                            <th>Completed Tasks</th>
+                            <th>Progress (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($instructorTasks as $task):
+                            $progress = $task['total_tasks'] > 0
+                                ? round(($task['completed_tasks'] / $task['total_tasks']) * 100, 1)
+                                : 0;
+                        ?>
+                            <tr>
+                                <td><?= htmlspecialchars($task['instructor_name']) ?></td>
+                                <td><?= $task['total_tasks'] ?></td>
+                                <td><?= $task['completed_tasks'] ?></td>
+                                <td><?= $progress ?>%</td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Chart -->
+            <div class="chart-container">
+                <canvas id="userChart"></canvas>
+            </div>
         </main>
-    </div>
-    <!-- Task Progress Table -->
-    <div class="table-container">
-        <h2>Instructor Task Progress</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Instructor</th>
-                    <th>Total Tasks</th>
-                    <th>Completed Tasks</th>
-                    <th>Progress (%)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($instructorTasks as $task):
-                    $progress = $task['total_tasks'] > 0
-                        ? round(($task['completed_tasks'] / $task['total_tasks']) * 100, 1)
-                        : 0;
-                ?>
-                    <tr>
-                        <td><?= htmlspecialchars($task['instructor']) ?></td>
-                        <td><?= $task['total_tasks'] ?></td>
-                        <td><?= $task['completed_tasks'] ?></td>
-                        <td><?= $progress ?>%</td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
     </div>
 
     <script>
