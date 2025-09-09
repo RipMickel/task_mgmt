@@ -41,6 +41,25 @@ if (!check_role('admin')) {
                 <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile">
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?> (Admin)</h1>
             </div>
+            <!-- Cards -->
+            <div class="cards">
+                <div class="card">
+                    <h3>Total Users</h3>
+                    <p>120</p>
+                </div>
+                <div class="card">
+                    <h3>Active Instructors</h3>
+                    <p>35</p>
+                </div>
+                <div class="card">
+                    <h3>Pending Approvals</h3>
+                    <p>8</p>
+                </div>
+                <div class="card">
+                    <h3>System Logs</h3>
+                    <p>452</p>
+                </div>
+            </div>
 </body>
 
 </html>
