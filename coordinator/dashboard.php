@@ -150,6 +150,34 @@ foreach ($userCounts as $row) {
             </div>
         </main>
     </div>
+    <!-- Task Progress Table -->
+    <div class="table-container">
+        <h2>Instructor Task Progress</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Instructor</th>
+                    <th>Total Tasks</th>
+                    <th>Completed Tasks</th>
+                    <th>Progress (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($instructorTasks as $task):
+                    $progress = $task['total_tasks'] > 0
+                        ? round(($task['completed_tasks'] / $task['total_tasks']) * 100, 1)
+                        : 0;
+                ?>
+                    <tr>
+                        <td><?= htmlspecialchars($task['instructor']) ?></td>
+                        <td><?= $task['total_tasks'] ?></td>
+                        <td><?= $task['completed_tasks'] ?></td>
+                        <td><?= $progress ?>%</td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 
     <script>
         const ctx = document.getElementById('userChart').getContext('2d');
