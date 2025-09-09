@@ -1,5 +1,9 @@
 <?php
-session_start();
+// ✅ Start session safely
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once "../inc/config.php";
 require_once "../inc/functions.php";
 redirect_if_not_logged_in();
@@ -39,6 +43,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <head>
     <title>Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             margin: 0;
@@ -148,15 +153,54 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #27ae60;
         }
 
-        /* Chart Container */
-        .chart-container {
+        /* Table Styling */
+        .table-container {
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .table-container table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .table-container th,
+        .table-container td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .table-container th {
+            background: #2c3e50;
+            color: white;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            background: #ecf0f1;
+            border-radius: 6px;
+            overflow: hidden;
+            height: 20px;
+            width: 100%;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 20px;
+            transition: width 0.6s ease;
         }
     </style>
-
 </head>
 
 <body>
@@ -173,6 +217,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
+
         <!-- Main Content -->
         <main class="main-content">
             <div class="welcome-container">
@@ -184,6 +229,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile">
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?> (Admin)</h1>
             </div>
+
             <!-- Cards -->
             <div class="cards">
                 <?php foreach ($userCounts as $uc): ?>
@@ -194,8 +240,49 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php endforeach; ?>
             </div>
 
+            <!-- Instructor Task Progress -->
+            <div class="table-container">
+                <h2>Instructor Task Progress</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Instructor</th>
+                            <th>Total Tasks</th>
+                            <th>Completed Tasks</th>
+                            <th>Progress (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($instructorTasks as $task):
+                            $progress = $task['total_tasks'] > 0
+                                ? round(($task['completed_tasks'] / $task['total_tasks']) * 100, 1)
+                                : 0;
+                        ?>
+                            <tr>
+                                <td><?= htmlspecialchars($task['instructor_name']) ?></td>
+                                <td><?= $task['total_tasks'] ?></td>
+                                <td><?= $task['completed_tasks'] ?></td>
+                                <td>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: <?= $progress ?>%;">
+                                            <?= $progress ?>%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Chart -->
+            <div class="table-container">
+                <h2>User Distribution</h2>
+                <canvas id="userChart"></canvas>
+            </div>
         </main>
     </div>
+
     <script>
         const ctx = document.getElementById('userChart').getContext('2d');
         const userChart = new Chart(ctx, {
