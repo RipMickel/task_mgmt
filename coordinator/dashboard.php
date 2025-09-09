@@ -188,7 +188,7 @@ foreach ($userCounts as $row) {
                 datasets: [{
                     label: 'User Count',
                     data: <?= json_encode($counts) ?>,
-                    backgroundColor: ['#1abc9c', '#3498db', '#e74c3c']
+                    backgroundColor: ['#27ae60', '#3498db', '#e74c3c']
                 }]
             },
             options: {
