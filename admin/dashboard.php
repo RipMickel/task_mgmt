@@ -275,11 +275,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </table>
             </div>
 
-            <!-- Chart -->
-            <div class="table-container">
-                <h2>User Distribution</h2>
-                <canvas id="userChart"></canvas>
-            </div>
+
         </main>
     </div>
 
