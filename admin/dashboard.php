@@ -30,6 +30,17 @@ if (!check_role('admin')) {
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="welcome-container">
+                <?php
+                $profilePic = !empty($_SESSION['profile_image'])
+                    ? "../uploads/profiles/" . $_SESSION['profile_image']
+                    : "../assets/images/default.png";
+                ?>
+                <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile">
+                <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?> (Admin)</h1>
+            </div>
 </body>
 
 </html>
