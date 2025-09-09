@@ -14,6 +14,87 @@ if (!check_role('admin')) {
 
 <head>
     <title>Admin Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f6f9;
+            color: #333;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        .dashboard {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #34495e;
+            color: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .sidebar h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 12px 20px;
+            color: #ecf0f1;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        .sidebar a:hover {
+            background: #2c3e50;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            margin: 0;
+            font-size: 22px;
+            color: #2c3e50;
+        }
+
+        .logout-btn {
+            margin-top: auto;
+            background: #e74c3c;
+            text-align: center;
+            padding: 12px;
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -60,16 +141,7 @@ if (!check_role('admin')) {
                     <p>452</p>
                 </div>
             </div>
-            <!-- Quick Links -->
-            <div class="quick-links">
-                <h2>Quick Actions</h2>
-                <ul>
-                    <li><a href="manage_users.php">👥 Manage Users</a></li>
-                    <li><a href="roles.php">⚙ Manage Roles</a></li>
-                    <li><a href="reports.php">📊 View Reports</a></li>
-                    <li><a href="../auth/logout.php">🚪 Logout</a></li>
-                </ul>
-            </div>
+
         </main>
     </div>
 </body>
