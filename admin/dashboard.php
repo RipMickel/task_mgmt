@@ -17,13 +17,19 @@ if (!check_role('admin')) {
 </head>
 
 <body>
-    <h2>Welcome Admin, <?= $_SESSION['name'] ?></h2>
-    <ul>
-        <li><a href="manage_users.php">Manage Users</a></li>
-        <li><a href="roles.php">Manage Roles</a></li>
-
-        <li><a href="../auth/logout.php">Logout</a></li>
-    </ul>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2>Admin Panel</h2>
+            <ul>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>">
+                    <a href="dashboard.php">Dashboard</a>
+                </li>
+                <li><a href="manage_users.php">Manage Users</a></li>
+                <li><a href="roles.php">Manage Roles</a></li>
+                <li><a href="../auth/logout.php">Logout</a></li>
+            </ul>
+        </aside>
 </body>
 
 </html>
