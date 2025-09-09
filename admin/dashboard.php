@@ -60,6 +60,18 @@ if (!check_role('admin')) {
                     <p>452</p>
                 </div>
             </div>
+            <!-- Quick Links -->
+            <div class="quick-links">
+                <h2>Quick Actions</h2>
+                <ul>
+                    <li><a href="manage_users.php">👥 Manage Users</a></li>
+                    <li><a href="roles.php">⚙ Manage Roles</a></li>
+                    <li><a href="reports.php">📊 View Reports</a></li>
+                    <li><a href="../auth/logout.php">🚪 Logout</a></li>
+                </ul>
+            </div>
+        </main>
+    </div>
 </body>
 
 </html>
