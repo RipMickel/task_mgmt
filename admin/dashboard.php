@@ -8,6 +8,31 @@ if (!check_role('admin')) {
     echo "Access Denied";
     exit;
 }
+
+// ✅ Fetch user counts by role
+$countStmt = $pdo->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
+$userCounts = $countStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$roles = [];
+$counts = [];
+foreach ($userCounts as $row) {
+    $roles[] = ucfirst($row['role']);
+    $counts[] = $row['count'];
+}
+
+// ✅ Fetch instructor task progress
+$sql = "
+    SELECT 
+        u.name AS instructor_name,
+        COUNT(t.id) AS total_tasks,
+        SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) AS completed_tasks
+    FROM users u
+    LEFT JOIN tasks t ON u.id = t.assigned_to
+    WHERE u.role = 'instructor'
+    GROUP BY u.id, u.name
+";
+$stmt = $pdo->query($sql);
+$instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html>
@@ -22,31 +47,37 @@ if (!check_role('admin')) {
             color: #333;
         }
 
-        header {
-            background: #2c3e50;
-            color: white;
-            padding: 15px 20px;
-            text-align: center;
-        }
-
-        .dashboard {
+        /* Layout */
+        .dashboard-container {
             display: flex;
-            height: calc(100vh - 60px);
+            min-height: 100vh;
         }
 
+        /* Sidebar */
         .sidebar {
             width: 250px;
-            background: #34495e;
+            background: #2c3e50;
             color: #ecf0f1;
             display: flex;
             flex-direction: column;
             padding: 20px 0;
         }
 
-        .sidebar h3 {
+        .sidebar h2 {
             text-align: center;
-            margin-bottom: 20px;
-            font-size: 18px;
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 10px;
         }
 
         .sidebar a {
@@ -57,13 +88,44 @@ if (!check_role('admin')) {
             transition: background 0.3s;
         }
 
-        .sidebar a:hover {
-            background: #2c3e50;
+        .sidebar a:hover,
+        .sidebar .active a {
+            background: #1abc9c;
+            border-left: 5px solid #16a085;
+            padding-left: 15px;
         }
 
+        /* Main Content */
         .main-content {
             flex: 1;
             padding: 30px;
+        }
+
+        /* Welcome Section */
+        .welcome-container {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .welcome-container img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 2px solid #3498db;
+        }
+
+        /* Cards */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
         .card {
@@ -71,27 +133,27 @@ if (!check_role('admin')) {
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            text-align: center;
         }
 
-        .card h2 {
-            margin: 0;
-            font-size: 22px;
+        .card h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
             color: #2c3e50;
         }
 
-        .logout-btn {
-            margin-top: auto;
-            background: #e74c3c;
-            text-align: center;
-            padding: 12px;
-            color: white;
+        .card p {
+            font-size: 24px;
             font-weight: bold;
-            text-decoration: none;
+            color: #27ae60;
         }
 
-        .logout-btn:hover {
-            background: #c0392b;
+        /* Chart Container */
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
         }
     </style>
 
@@ -124,26 +186,43 @@ if (!check_role('admin')) {
             </div>
             <!-- Cards -->
             <div class="cards">
-                <div class="card">
-                    <h3>Total Users</h3>
-                    <p>120</p>
-                </div>
-                <div class="card">
-                    <h3>Active Instructors</h3>
-                    <p>35</p>
-                </div>
-                <div class="card">
-                    <h3>Pending Approvals</h3>
-                    <p>8</p>
-                </div>
-                <div class="card">
-                    <h3>System Logs</h3>
-                    <p>452</p>
-                </div>
+                <?php foreach ($userCounts as $uc): ?>
+                    <div class="card">
+                        <h3><?= ucfirst($uc['role']) ?>s</h3>
+                        <p><?= $uc['count'] ?></p>
+                    </div>
+                <?php endforeach; ?>
             </div>
 
         </main>
     </div>
+    <script>
+        const ctx = document.getElementById('userChart').getContext('2d');
+        const userChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode($roles) ?>,
+                datasets: [{
+                    label: 'User Count',
+                    data: <?= json_encode($counts) ?>,
+                    backgroundColor: ['#27ae60', '#3498db', '#e74c3c']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>
