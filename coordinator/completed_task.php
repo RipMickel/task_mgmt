@@ -9,37 +9,44 @@ if (!check_role('coordinator')) {
     exit;
 }
 
-// ✅ Fetch user counts by role
-$countStmt = $pdo->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
-$userCounts = $countStmt->fetchAll(PDO::FETCH_ASSOC);
+// Fetch all task history with file uploads and academic year
+$stmt = $pdo->prepare("SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
+                       FROM task_history th
+                       JOIN tasks t ON th.task_id = t.id
+                       JOIN users u ON t.assigned_to = u.id
+                       JOIN users uc ON t.assigned_by = uc.id
+                       ORDER BY th.completed_at DESC");
+$stmt->execute();
 
-$roles = [];
-$counts = [];
-foreach ($userCounts as $row) {
-    $roles[] = ucfirst($row['role']);
-    $counts[] = $row['count'];
+// Handle academic year search
+$academicYear = isset($_GET['academic_year']) ? $_GET['academic_year'] : '';
+
+// Fetch all task history with optional academic year filter
+$sql = "SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
+        FROM task_history th
+        JOIN tasks t ON th.task_id = t.id
+        JOIN users u ON t.assigned_to = u.id
+        JOIN users uc ON t.assigned_by = uc.id";
+
+if ($academicYear) {
+    $sql .= " WHERE t.academic_year = ?";
+    $sql .= " ORDER BY th.completed_at DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$academicYear]);
+} else {
+    $sql .= " ORDER BY th.completed_at DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
 }
-
-// ✅ Fetch instructor task progress
-$sql = "
-    SELECT 
-        u.name AS instructor_name,
-        COUNT(t.id) AS total_tasks,
-        SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) AS completed_tasks
-    FROM users u
-    LEFT JOIN tasks t ON u.id = t.assigned_to
-    WHERE u.role = 'instructor'
-    GROUP BY u.id, u.name
-";
-$stmt = $pdo->query($sql);
-$instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$taskHistory = $stmt->fetchAll();
 ?>
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Coordinator Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <title>Task History</title>
     <style>
         body {
             margin: 0;
@@ -195,90 +202,54 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </ul>
         </aside>
 
+
         <main class="main-content">
-            <div class="welcome-container">
-                <?php
-                $profilePic = !empty($_SESSION['profile_image'])
-                    ? "../uploads/profiles/" . $_SESSION['profile_image']
-                    : "../assets/images/default.png";
-                ?>
-                <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile">
-                <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
-            </div>
+            <h1>Completed Task</h1>
+            <form method="GET" class="search-form">
+                <label for="academic_year">Search by Academic Year:</label>
+                <input type="text" name="academic_year" id="academic_year" value="<?= htmlspecialchars($academicYear) ?>" placeholder="e.g., 2025-2026">
+                <button type="submit">Search</button>
+                <a href="task_history.php" class="btn">Reset</a>
+            </form>
 
-            <!-- Cards -->
-            <div class="cards">
-                <?php foreach ($userCounts as $uc): ?>
-                    <div class="card">
-                        <h3><?= ucfirst($uc['role']) ?>s</h3>
-                        <p><?= $uc['count'] ?></p>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-
-            <!-- Instructor Task Progress -->
-            <div class="table-container">
-                <h2>Instructor Task Progress</h2>
+            <?php if (count($taskHistory) > 0): ?>
                 <table>
                     <thead>
                         <tr>
+                            <th>Task Title</th>
+                            <th>Description</th>
                             <th>Instructor</th>
-                            <th>Total Tasks</th>
-                            <th>Completed Tasks</th>
-                            <th>Progress (%)</th>
+                            <th>Coordinator</th>
+                            <th>Academic Year</th>
+                            <th>Completed At</th>
+                            <th>File</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($instructorTasks as $task):
-                            $progress = $task['total_tasks'] > 0
-                                ? round(($task['completed_tasks'] / $task['total_tasks']) * 100, 1)
-                                : 0;
-                        ?>
+                        <?php foreach ($taskHistory as $task): ?>
                             <tr>
+                                <td><?= htmlspecialchars($task['task_title']) ?></td>
+                                <td><?= htmlspecialchars($task['task_desc']) ?></td>
                                 <td><?= htmlspecialchars($task['instructor_name']) ?></td>
-                                <td><?= $task['total_tasks'] ?></td>
-                                <td><?= $task['completed_tasks'] ?></td>
-                                <td><?= $progress ?>%</td>
+                                <td><?= htmlspecialchars($task['coordinator_name']) ?></td>
+                                <td><?= htmlspecialchars($task['academic_year']) ?></td>
+                                <td><?= htmlspecialchars($task['completed_at']) ?></td>
+                                <td>
+                                    <?php if (!empty($task['file_path'])): ?>
+                                        <a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank"><?= htmlspecialchars($task['file_path']) ?></a>
+                                    <?php else: ?>
+                                        N/A
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
-            </div>
-
-            <!-- Chart -->
-            <div class="chart-container">
-                <canvas id="userChart"></canvas>
-            </div>
+            <?php else: ?>
+                <p>No task history available.</p>
+            <?php endif; ?>
         </main>
     </div>
-
-    <script>
-        const ctx = document.getElementById('userChart').getContext('2d');
-        const userChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: <?= json_encode($roles) ?>,
-                datasets: [{
-                    label: 'User Count',
-                    data: <?= json_encode($counts) ?>,
-                    backgroundColor: ['#27ae60', '#3498db', '#e74c3c']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    </script>
 </body>
 
 </html>
