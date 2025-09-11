@@ -9,28 +9,18 @@ if (!check_role('admin')) {
     exit;
 }
 
-// Fetch all task history with file uploads and academic year
-$stmt = $pdo->prepare("SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
-                       FROM task_history th
-                       JOIN tasks t ON th.task_id = t.id
-                       JOIN users u ON t.assigned_to = u.id
-                       JOIN users uc ON t.assigned_by = uc.id
-                       ORDER BY th.completed_at DESC");
-$stmt->execute();
-
 // Handle academic year search
 $academicYear = isset($_GET['academic_year']) ? $_GET['academic_year'] : '';
 
-// Fetch all task history with optional academic year filter
-$sql = "SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
+$sql = "SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year,
+               u.name as instructor_name, uc.name as coordinator_name
         FROM task_history th
         JOIN tasks t ON th.task_id = t.id
         JOIN users u ON t.assigned_to = u.id
         JOIN users uc ON t.assigned_by = uc.id";
 
 if ($academicYear) {
-    $sql .= " WHERE t.academic_year = ?";
-    $sql .= " ORDER BY th.completed_at DESC";
+    $sql .= " WHERE t.academic_year = ? ORDER BY th.completed_at DESC";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$academicYear]);
 } else {
@@ -40,13 +30,13 @@ if ($academicYear) {
 }
 $taskHistory = $stmt->fetchAll();
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <title>Task History</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
     <style>
         body {
             margin: 0;
@@ -71,19 +61,9 @@ $taskHistory = $stmt->fetchAll();
 
         .sidebar h2 {
             text-align: center;
-            margin: 0 0 20px 0;
+            margin-bottom: 20px;
             font-size: 20px;
             font-weight: bold;
-        }
-
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .sidebar li {
-            margin-bottom: 10px;
         }
 
         .sidebar a {
@@ -115,42 +95,13 @@ $taskHistory = $stmt->fetchAll();
             overflow-x: auto;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
+        .search-form {
+            margin-bottom: 15px;
         }
 
-        th,
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-
-        th {
+        table.dataTable thead th {
             background: #2c3e50;
             color: white;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        tr:hover {
-            background-color: #eef6f9;
-        }
-
-        a.btn {
-            padding: 6px 12px;
-            background: #3498db;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 4px;
-        }
-
-        a.btn:hover {
-            background: #2980b9;
         }
     </style>
 </head>
@@ -172,17 +123,11 @@ $taskHistory = $stmt->fetchAll();
 
         <main class="main-content">
             <h1>Completed Task</h1>
-            <form method="GET" class="search-form">
-                <label for="academic_year">Search by Academic Year:</label>
-                <input type="text" name="academic_year" id="academic_year"
-                    value="<?= htmlspecialchars($academicYear) ?>" placeholder="e.g., 2025-2026">
-                <button type="submit">Search</button>
-                <a href="completed_task.php" class="btn">Reset</a>
-            </form>
+
 
             <?php if (count($taskHistory) > 0): ?>
                 <div class="table-container">
-                    <table>
+                    <table id="taskTable" class="display">
                         <thead>
                             <tr>
                                 <th>Task Title</th>
@@ -222,6 +167,20 @@ $taskHistory = $stmt->fetchAll();
             <?php endif; ?>
         </main>
     </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#taskTable').DataTable({
+                "pageLength": 10,
+                "ordering": true,
+                "lengthMenu": [5, 10, 25, 50],
+                "language": {
+                    "search": "Filter records:"
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
