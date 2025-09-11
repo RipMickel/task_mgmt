@@ -50,6 +50,7 @@ $taskHistory = $stmt->fetchAll();
             min-height: 100vh;
         }
 
+        /* Sidebar */
         .sidebar {
             width: 250px;
             background: #2c3e50;
@@ -61,9 +62,19 @@ $taskHistory = $stmt->fetchAll();
 
         .sidebar h2 {
             text-align: center;
-            margin-bottom: 20px;
+            margin: 0 0 20px 0;
             font-size: 20px;
             font-weight: bold;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 10px;
         }
 
         .sidebar a {

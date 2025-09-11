@@ -1,5 +1,4 @@
 <?php
-// ✅ Start session safely
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -13,7 +12,7 @@ if (!check_role('admin')) {
     exit;
 }
 
-// ✅ Fetch user counts by role
+// ✅ User counts by role
 $countStmt = $pdo->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
 $userCounts = $countStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -24,7 +23,7 @@ foreach ($userCounts as $row) {
     $counts[] = $row['count'];
 }
 
-// ✅ Fetch instructor task progress
+// ✅ Instructor task progress
 $sql = "
     SELECT 
         u.name AS instructor_name,
@@ -39,10 +38,12 @@ $stmt = $pdo->query($sql);
 $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
     <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -52,7 +53,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #333;
         }
 
-        /* Layout */
         .dashboard-container {
             display: flex;
             min-height: 100vh;
@@ -100,13 +100,11 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding-left: 15px;
         }
 
-        /* Main Content */
         .main-content {
             flex: 1;
             padding: 30px;
         }
 
-        /* Welcome Section */
         .welcome-container {
             display: flex;
             align-items: center;
@@ -125,7 +123,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border: 2px solid #3498db;
         }
 
-        /* Cards */
         .cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -153,7 +150,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #27ae60;
         }
 
-        /* Table Styling */
         .table-container {
             background: white;
             padding: 20px;
@@ -162,43 +158,27 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-top: 20px;
         }
 
-        .table-container table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        .table-container th,
-        .table-container td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-
-        .table-container th {
-            background: #2c3e50;
-            color: white;
-        }
-
-        /* Progress Bar */
         .progress-bar {
             background: #ecf0f1;
             border-radius: 6px;
             overflow: hidden;
             height: 20px;
             width: 100%;
-            position: relative;
         }
 
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, #27ae60, #2ecc71);
-            text-align: center;
             color: white;
             font-size: 12px;
             font-weight: bold;
             line-height: 20px;
             transition: width 0.6s ease;
+        }
+
+        table.dataTable thead th {
+            background: #2c3e50;
+            color: white;
         }
     </style>
 </head>
@@ -227,11 +207,8 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     ? "../uploads/profiles/" . $_SESSION['profile_image']
                     : "../assets/images/default.png";
                 ?>
-                <!-- Clickable profile image -->
-                <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" id="profile-pic" style="cursor: pointer; width:100px; height:100px; border-radius:50%; border:2px solid #ccc; object-fit:cover;">
+                <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" id="profile-pic" style="cursor:pointer;width:100px;height:100px;border-radius:50%;border:2px solid #ccc;object-fit:cover;">
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?> (Admin)</h1>
-
-                <!-- Hidden file input -->
                 <form id="upload-form" action="upload_profile.php" method="POST" enctype="multipart/form-data" style="display:none;">
                     <input type="file" name="profile_image" id="profile-input" accept="image/*">
                 </form>
@@ -243,14 +220,10 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         document.getElementById('profile-input').click();
                     }
                 });
-
                 document.getElementById('profile-input').addEventListener('change', function() {
-                    if (this.files.length > 0) {
-                        document.getElementById('upload-form').submit();
-                    }
+                    if (this.files.length > 0) document.getElementById('upload-form').submit();
                 });
             </script>
-
 
             <!-- Cards -->
             <div class="cards">
@@ -265,7 +238,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <!-- Instructor Task Progress -->
             <div class="table-container">
                 <h2>Instructor Task Progress</h2>
-                <table>
+                <table id="instructorTable" class="display">
                     <thead>
                         <tr>
                             <th>Instructor</th>
@@ -286,9 +259,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <td><?= $task['completed_tasks'] ?></td>
                                 <td>
                                     <div class="progress-bar">
-                                        <div class="progress-fill" style="width: <?= $progress ?>%;">
-                                            <?= $progress ?>%
-                                        </div>
+                                        <div class="progress-fill" style="width:<?= $progress ?>%;"><?= $progress ?>%</div>
                                     </div>
                                 </td>
                             </tr>
@@ -296,36 +267,21 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </tbody>
                 </table>
             </div>
-
-
         </main>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script>
-        const ctx = document.getElementById('userChart').getContext('2d');
-        const userChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: <?= json_encode($roles) ?>,
-                datasets: [{
-                    label: 'User Count',
-                    data: <?= json_encode($counts) ?>,
-                    backgroundColor: ['#27ae60', '#3498db', '#e74c3c']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+        $(document).ready(function() {
+            $('#instructorTable').DataTable({
+                "pageLength": 10,
+                "ordering": true,
+                "lengthMenu": [5, 10, 25, 50],
+                "language": {
+                    "search": "Filter records:"
                 }
-            }
+            });
         });
     </script>
 </body>
