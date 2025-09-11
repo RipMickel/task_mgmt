@@ -45,10 +45,60 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
 
         body {
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
             background: #f4f6f9;
             color: #333;
-            padding: 20px;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px 0;
+            flex-shrink: 0;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 12px 20px;
+            color: #ecf0f1;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        .sidebar a:hover,
+        .sidebar .active a {
+            background: #1abc9c;
+            border-left: 5px solid #16a085;
+            padding-left: 15px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
         }
 
         h2,
@@ -80,9 +130,9 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
             background: #1abc9c;
             color: #fff;
             border: none;
+            font-weight: bold;
             cursor: pointer;
             transition: background 0.3s;
-            font-weight: bold;
         }
 
         form button:hover {
@@ -92,7 +142,7 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
         .table-container {
             max-width: 100%;
             overflow-x: auto;
-            margin-top: 20px;
+            margin-top: 30px;
         }
 
         table {
@@ -131,32 +181,23 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
             color: #c0392b;
         }
 
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            text-decoration: none;
-            background: #3498db;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            transition: background 0.3s;
-        }
-
-        .back-link:hover {
-            background: #2980b9;
-        }
-
-        @media (max-width: 600px) {
-
-            th,
-            td {
-                padding: 10px;
-                font-size: 14px;
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
             }
 
-            form input,
-            form select,
-            form button {
+            .sidebar {
+                width: 100%;
+                text-align: center;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            table,
+            th,
+            td {
                 font-size: 14px;
             }
         }
@@ -164,46 +205,60 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
 </head>
 
 <body>
-    <h2>Manage Users</h2>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2>Admin Panel</h2>
+            <ul>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>">
+                    <a href="dashboard.php">Dashboard</a>
+                </li>
+                <li><a href="manage_users.php">Manage Users</a></li>
+                <li><a href="roles.php">Manage Roles</a></li>
+                <li><a href="../auth/logout.php">Logout</a></li>
+            </ul>
+        </aside>
 
-    <form method="post">
-        <input type="text" name="name" placeholder="Full Name" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <select name="role">
-            <option value="admin">Admin</option>
-            <option value="coordinator">Coordinator</option>
-            <option value="instructor">Instructor</option>
-        </select>
-        <button type="submit" name="add_user">Add User</button>
-    </form>
+        <!-- Main content -->
+        <div class="main-content">
+            <h2>Manage Users</h2>
+            <form method="post">
+                <input type="text" name="name" placeholder="Full Name" required>
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <select name="role" required>
+                    <option value="">Select Role</option>
+                    <option value="admin">Admin</option>
+                    <option value="coordinator">Coordinator</option>
+                    <option value="instructor">Instructor</option>
+                </select>
+                <button type="submit" name="add_user">Add User</button>
+            </form>
 
-    <h3>Existing Users</h3>
-    <div class="table-container">
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Action</th>
-            </tr>
-            <?php foreach ($users as $user): ?>
-                <tr>
-                    <td><?= htmlspecialchars($user['id']) ?></td>
-                    <td><?= htmlspecialchars($user['name']) ?></td>
-                    <td><?= htmlspecialchars($user['email']) ?></td>
-                    <td><?= htmlspecialchars($user['role']) ?></td>
-                    <td>
-                        <a class="delete-btn" href="?delete=<?= $user['id'] ?>" onclick="return confirm('Delete user?')">Delete</a>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </table>
-    </div>
-
-    <div style="text-align:center;">
-        <a href="dashboard.php" class="back-link">Back to Dashboard</a>
+            <h3>Existing Users</h3>
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                    </tr>
+                    <?php foreach ($users as $user): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($user['id']) ?></td>
+                            <td><?= htmlspecialchars($user['name']) ?></td>
+                            <td><?= htmlspecialchars($user['email']) ?></td>
+                            <td><?= htmlspecialchars($user['role']) ?></td>
+                            <td>
+                                <a class="delete-btn" href="?delete=<?= $user['id'] ?>" onclick="return confirm('Delete user?')">Delete</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </table>
+            </div>
+        </div>
     </div>
 </body>
 
