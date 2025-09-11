@@ -9,26 +9,36 @@ if (!check_role('admin')) {
     exit;
 }
 
-// Add new user
-if (isset($_POST['add_user'])) {
-    $name = $_POST['name'];
-    $email = $_POST['email'];
-    $role = $_POST['role'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+// Fetch all task history with file uploads and academic year
+$stmt = $pdo->prepare("SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
+                       FROM task_history th
+                       JOIN tasks t ON th.task_id = t.id
+                       JOIN users u ON t.assigned_to = u.id
+                       JOIN users uc ON t.assigned_by = uc.id
+                       ORDER BY th.completed_at DESC");
+$stmt->execute();
 
-    $stmt = $pdo->prepare("INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)");
-    $stmt->execute([$name, $email, $password, $role]);
+// Handle academic year search
+$academicYear = isset($_GET['academic_year']) ? $_GET['academic_year'] : '';
+
+// Fetch all task history with optional academic year filter
+$sql = "SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
+        FROM task_history th
+        JOIN tasks t ON th.task_id = t.id
+        JOIN users u ON t.assigned_to = u.id
+        JOIN users uc ON t.assigned_by = uc.id";
+
+if ($academicYear) {
+    $sql .= " WHERE t.academic_year = ?";
+    $sql .= " ORDER BY th.completed_at DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$academicYear]);
+} else {
+    $sql .= " ORDER BY th.completed_at DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
 }
-
-// Delete user
-if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
-    $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
-    $stmt->execute([$id]);
-}
-
-// Fetch users
-$users = $pdo->query("SELECT * FROM users")->fetchAll();
+$taskHistory = $stmt->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -36,8 +46,7 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
 
 <head>
     <meta charset="UTF-8">
-    <title>Manage Users</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task History</title>
     <style>
         body {
             margin: 0;
@@ -204,56 +213,63 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
             <h2>Admin Panel</h2>
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
-                <li><a href="completed_task.php">Completed Task</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'manage_users.php' ? 'active' : '' ?>">
-                    <a href="manage_users.php">Manage Users</a>
-                </li>
 
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'completed_task.php' ? 'active' : '' ?>">
+                    <a href="completed_task.php">Completed Task</a>
+                </li>
+                <li><a href="manage_users.php">Manage Users</a></li>
                 <li><a href="roles.php">Manage Roles</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
 
-        <!-- Main content -->
-        <div class="main-content">
-            <h2>Manage Users</h2>
-            <form method="post">
-                <input type="text" name="name" placeholder="Full Name" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="password" name="password" placeholder="Password" required>
-                <select name="role" required>
-                    <option value="">Select Role</option>
-                    <option value="admin">Admin</option>
-                    <option value="coordinator">Coordinator</option>
-                    <option value="instructor">Instructor</option>
-                </select>
-                <button type="submit" name="add_user">Add User</button>
+
+        <main class="main-content">
+            <h1>Completed Task</h1>
+            <form method="GET" class="search-form">
+                <label for="academic_year">Search by Academic Year:</label>
+                <input type="text" name="academic_year" id="academic_year" value="<?= htmlspecialchars($academicYear) ?>" placeholder="e.g., 2025-2026">
+                <button type="submit">Search</button>
+                <a href="task_history.php" class="btn">Reset</a>
             </form>
 
-            <h3>Existing Users</h3>
-            <div class="table-container">
+            <?php if (count($taskHistory) > 0): ?>
                 <table>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Action</th>
-                    </tr>
-                    <?php foreach ($users as $user): ?>
+                    <thead>
                         <tr>
-                            <td><?= htmlspecialchars($user['id']) ?></td>
-                            <td><?= htmlspecialchars($user['name']) ?></td>
-                            <td><?= htmlspecialchars($user['email']) ?></td>
-                            <td><?= htmlspecialchars($user['role']) ?></td>
-                            <td>
-                                <a class="delete-btn" href="?delete=<?= $user['id'] ?>" onclick="return confirm('Delete user?')">Delete</a>
-                            </td>
+                            <th>Task Title</th>
+                            <th>Description</th>
+                            <th>Instructor</th>
+                            <th>Coordinator</th>
+                            <th>Academic Year</th>
+                            <th>Completed At</th>
+                            <th>File</th>
                         </tr>
-                    <?php endforeach; ?>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($taskHistory as $task): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($task['task_title']) ?></td>
+                                <td><?= htmlspecialchars($task['task_desc']) ?></td>
+                                <td><?= htmlspecialchars($task['instructor_name']) ?></td>
+                                <td><?= htmlspecialchars($task['coordinator_name']) ?></td>
+                                <td><?= htmlspecialchars($task['academic_year']) ?></td>
+                                <td><?= htmlspecialchars($task['completed_at']) ?></td>
+                                <td>
+                                    <?php if (!empty($task['file_path'])): ?>
+                                        <a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank"><?= htmlspecialchars($task['file_path']) ?></a>
+                                    <?php else: ?>
+                                        N/A
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
                 </table>
-            </div>
-        </div>
+            <?php else: ?>
+                <p>No task history available.</p>
+            <?php endif; ?>
+        </main>
     </div>
 </body>
 

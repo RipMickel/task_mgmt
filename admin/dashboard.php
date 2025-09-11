@@ -212,6 +212,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>">
                     <a href="dashboard.php">Dashboard</a>
                 </li>
+                <li><a href="completed_task.php">Completed Task</a></li>
                 <li><a href="manage_users.php">Manage Users</a></li>
                 <li><a href="roles.php">Manage Roles</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
