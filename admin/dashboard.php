@@ -58,7 +58,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             min-height: 100vh;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 250px;
             background: #2c3e50;
@@ -185,7 +184,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <h2>Admin Panel</h2>
             <ul>
@@ -199,7 +197,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </ul>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
             <div class="welcome-container">
                 <?php
@@ -225,7 +222,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 });
             </script>
 
-            <!-- Cards -->
             <div class="cards">
                 <?php foreach ($userCounts as $uc): ?>
                     <div class="card">
@@ -235,7 +231,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php endforeach; ?>
             </div>
 
-            <!-- Instructor Task Progress -->
             <div class="table-container">
                 <h2>Instructor Task Progress</h2>
                 <table id="instructorTable" class="display">
@@ -284,6 +279,28 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             });
         });
     </script>
+
+    <script>
+        let lastCount = null;
+
+        function checkForUpdates() {
+            fetch('check_updates.php')
+                .then(res => res.text())
+                .then(count => {
+                    count = parseInt(count);
+                    if (lastCount === null) {
+                        lastCount = count;
+                    } else if (count > lastCount) {
+                        lastCount = count;
+                        location.reload(); // 🔄 Reload page if new data
+                    }
+                })
+                .catch(err => console.error('Error checking updates:', err));
+        }
+        // ⏳ Check every 5 seconds
+        setInterval(checkForUpdates, 5000);
+    </script>
+
 </body>
 
 </html>
