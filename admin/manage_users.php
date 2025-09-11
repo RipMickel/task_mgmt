@@ -38,6 +38,10 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
     <meta charset="UTF-8">
     <title>Manage Users</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+
     <style>
         body {
             margin: 0;
@@ -46,13 +50,11 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
             color: #333;
         }
 
-        /* Layout */
         .dashboard-container {
             display: flex;
             min-height: 100vh;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 250px;
             background: #2c3e50;
@@ -94,105 +96,32 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
             padding-left: 15px;
         }
 
-        /* Main Content */
         .main-content {
             flex: 1;
             padding: 30px;
         }
 
-        /* Welcome Section */
-        .welcome-container {
-            display: flex;
-            align-items: center;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .welcome-container img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            margin-right: 15px;
-            border: 2px solid #3498db;
-        }
-
-        /* Cards */
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        .card h3 {
-            margin-bottom: 10px;
-            font-size: 18px;
-            color: #2c3e50;
-        }
-
-        .card p {
-            font-size: 24px;
-            font-weight: bold;
-            color: #27ae60;
-        }
-
-        /* Table Styling */
         .table-container {
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
+            overflow-x: auto;
         }
 
-        .table-container table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        .table-container th,
-        .table-container td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-
-        .table-container th {
+        table.dataTable thead th {
             background: #2c3e50;
-            color: white;
+            color: #fff;
         }
 
-        /* Progress Bar */
-        .progress-bar {
-            background: #ecf0f1;
-            border-radius: 6px;
-            overflow: hidden;
-            height: 20px;
-            width: 100%;
-            position: relative;
+        .delete-btn {
+            color: red;
+            text-decoration: none;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #27ae60, #2ecc71);
-            text-align: center;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            line-height: 20px;
-            transition: width 0.6s ease;
+        .delete-btn:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -208,7 +137,6 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'manage_users.php' ? 'active' : '' ?>">
                     <a href="manage_users.php">Manage Users</a>
                 </li>
-
                 <li><a href="roles.php">Manage Roles</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
@@ -232,29 +160,55 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
 
             <h3>Existing Users</h3>
             <div class="table-container">
-                <table>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Action</th>
-                    </tr>
-                    <?php foreach ($users as $user): ?>
+                <table id="usersTable" class="display">
+                    <thead>
                         <tr>
-                            <td><?= htmlspecialchars($user['id']) ?></td>
-                            <td><?= htmlspecialchars($user['name']) ?></td>
-                            <td><?= htmlspecialchars($user['email']) ?></td>
-                            <td><?= htmlspecialchars($user['role']) ?></td>
-                            <td>
-                                <a class="delete-btn" href="?delete=<?= $user['id'] ?>" onclick="return confirm('Delete user?')">Delete</a>
-                            </td>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Action</th>
                         </tr>
-                    <?php endforeach; ?>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($users as $user): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($user['id']) ?></td>
+                                <td><?= htmlspecialchars($user['name']) ?></td>
+                                <td><?= htmlspecialchars($user['email']) ?></td>
+                                <td><?= htmlspecialchars($user['role']) ?></td>
+                                <td>
+                                    <a class="delete-btn" href="?delete=<?= $user['id'] ?>" onclick="return confirm('Delete user?')">Delete</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#usersTable').DataTable({
+                responsive: true,
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [
+                    [0, 'asc']
+                ],
+                language: {
+                    search: "Search Users:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ users"
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

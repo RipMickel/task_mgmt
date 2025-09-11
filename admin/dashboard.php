@@ -227,9 +227,30 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     ? "../uploads/profiles/" . $_SESSION['profile_image']
                     : "../assets/images/default.png";
                 ?>
-                <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile">
+                <!-- Clickable profile image -->
+                <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" id="profile-pic" style="cursor: pointer; width:100px; height:100px; border-radius:50%; border:2px solid #ccc; object-fit:cover;">
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?> (Admin)</h1>
+
+                <!-- Hidden file input -->
+                <form id="upload-form" action="upload_profile.php" method="POST" enctype="multipart/form-data" style="display:none;">
+                    <input type="file" name="profile_image" id="profile-input" accept="image/*">
+                </form>
             </div>
+
+            <script>
+                document.getElementById('profile-pic').addEventListener('click', function() {
+                    if (confirm('Do you want to add or change your profile image?')) {
+                        document.getElementById('profile-input').click();
+                    }
+                });
+
+                document.getElementById('profile-input').addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        document.getElementById('upload-form').submit();
+                    }
+                });
+            </script>
+
 
             <!-- Cards -->
             <div class="cards">
