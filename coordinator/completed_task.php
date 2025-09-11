@@ -209,7 +209,7 @@ $taskHistory = $stmt->fetchAll();
                 <label for="academic_year">Search by Academic Year:</label>
                 <input type="text" name="academic_year" id="academic_year" value="<?= htmlspecialchars($academicYear) ?>" placeholder="e.g., 2025-2026">
                 <button type="submit">Search</button>
-                <a href="task_history.php" class="btn">Reset</a>
+                <a href="completed_task.php" class="btn">Reset</a>
             </form>
 
             <?php if (count($taskHistory) > 0): ?>

@@ -46,17 +46,19 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         /* Sidebar */
         .sidebar {
-            width: 220px;
+            width: 250px;
             background: #2c3e50;
             color: #ecf0f1;
-            padding-top: 20px;
-            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
         }
 
         .sidebar h2 {
             text-align: center;
-            font-size: 18px;
-            margin-bottom: 20px;
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            font-weight: bold;
         }
 
         .sidebar ul {
@@ -71,7 +73,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         .sidebar a {
             display: block;
-            padding: 10px 20px;
+            padding: 12px 20px;
             color: #ecf0f1;
             text-decoration: none;
             transition: background 0.3s;
@@ -107,12 +109,12 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 600px;
+            min-width: 40px;
         }
 
         th,
         td {
-            padding: 12px 15px;
+            padding: 12px 9px;
             border-bottom: 1px solid #ddd;
             text-align: left;
         }
@@ -145,7 +147,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #16a085;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 760px) {
             .dashboard-container {
                 flex-direction: column;
             }
@@ -187,7 +189,6 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <th>Name</th>
                             <th>Email</th>
                             <th>Role</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>

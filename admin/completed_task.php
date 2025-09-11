@@ -55,13 +55,11 @@ $taskHistory = $stmt->fetchAll();
             color: #333;
         }
 
-        /* Layout */
         .dashboard-container {
             display: flex;
             min-height: 100vh;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 250px;
             background: #2c3e50;
@@ -103,117 +101,66 @@ $taskHistory = $stmt->fetchAll();
             padding-left: 15px;
         }
 
-        /* Main Content */
         .main-content {
             flex: 1;
             padding: 30px;
         }
 
-        /* Welcome Section */
-        .welcome-container {
-            display: flex;
-            align-items: center;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .welcome-container img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            margin-right: 15px;
-            border: 2px solid #3498db;
-        }
-
-        /* Cards */
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        .card h3 {
-            margin-bottom: 10px;
-            font-size: 18px;
-            color: #2c3e50;
-        }
-
-        .card p {
-            font-size: 24px;
-            font-weight: bold;
-            color: #27ae60;
-        }
-
-        /* Table Styling */
         .table-container {
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
+            overflow-x: auto;
         }
 
-        .table-container table {
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            min-width: 800px;
         }
 
-        .table-container th,
-        .table-container td {
+        th,
+        td {
             padding: 12px 15px;
             border-bottom: 1px solid #ddd;
             text-align: left;
         }
 
-        .table-container th {
+        th {
             background: #2c3e50;
             color: white;
         }
 
-        /* Progress Bar */
-        .progress-bar {
-            background: #ecf0f1;
-            border-radius: 6px;
-            overflow: hidden;
-            height: 20px;
-            width: 100%;
-            position: relative;
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #27ae60, #2ecc71);
-            text-align: center;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            line-height: 20px;
-            transition: width 0.6s ease;
+        tr:hover {
+            background-color: #eef6f9;
+        }
+
+        a.btn {
+            padding: 6px 12px;
+            background: #3498db;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        a.btn:hover {
+            background: #2980b9;
         }
     </style>
 </head>
 
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <h2>Admin Panel</h2>
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
-
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'completed_task.php' ? 'active' : '' ?>">
                     <a href="completed_task.php">Completed Task</a>
                 </li>
@@ -223,49 +170,53 @@ $taskHistory = $stmt->fetchAll();
             </ul>
         </aside>
 
-
         <main class="main-content">
             <h1>Completed Task</h1>
             <form method="GET" class="search-form">
                 <label for="academic_year">Search by Academic Year:</label>
-                <input type="text" name="academic_year" id="academic_year" value="<?= htmlspecialchars($academicYear) ?>" placeholder="e.g., 2025-2026">
+                <input type="text" name="academic_year" id="academic_year"
+                    value="<?= htmlspecialchars($academicYear) ?>" placeholder="e.g., 2025-2026">
                 <button type="submit">Search</button>
-                <a href="task_history.php" class="btn">Reset</a>
+                <a href="completed_task.php" class="btn">Reset</a>
             </form>
 
             <?php if (count($taskHistory) > 0): ?>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Task Title</th>
-                            <th>Description</th>
-                            <th>Instructor</th>
-                            <th>Coordinator</th>
-                            <th>Academic Year</th>
-                            <th>Completed At</th>
-                            <th>File</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($taskHistory as $task): ?>
+                <div class="table-container">
+                    <table>
+                        <thead>
                             <tr>
-                                <td><?= htmlspecialchars($task['task_title']) ?></td>
-                                <td><?= htmlspecialchars($task['task_desc']) ?></td>
-                                <td><?= htmlspecialchars($task['instructor_name']) ?></td>
-                                <td><?= htmlspecialchars($task['coordinator_name']) ?></td>
-                                <td><?= htmlspecialchars($task['academic_year']) ?></td>
-                                <td><?= htmlspecialchars($task['completed_at']) ?></td>
-                                <td>
-                                    <?php if (!empty($task['file_path'])): ?>
-                                        <a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank"><?= htmlspecialchars($task['file_path']) ?></a>
-                                    <?php else: ?>
-                                        N/A
-                                    <?php endif; ?>
-                                </td>
+                                <th>Task Title</th>
+                                <th>Description</th>
+                                <th>Instructor</th>
+                                <th>Coordinator</th>
+                                <th>Academic Year</th>
+                                <th>Completed At</th>
+                                <th>File</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($taskHistory as $task): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($task['task_title']) ?></td>
+                                    <td><?= htmlspecialchars($task['task_desc']) ?></td>
+                                    <td><?= htmlspecialchars($task['instructor_name']) ?></td>
+                                    <td><?= htmlspecialchars($task['coordinator_name']) ?></td>
+                                    <td><?= htmlspecialchars($task['academic_year']) ?></td>
+                                    <td><?= htmlspecialchars($task['completed_at']) ?></td>
+                                    <td>
+                                        <?php if (!empty($task['file_path'])): ?>
+                                            <a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank">
+                                                <?= htmlspecialchars($task['file_path']) ?>
+                                            </a>
+                                        <?php else: ?>
+                                            N/A
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php else: ?>
                 <p>No task history available.</p>
             <?php endif; ?>
