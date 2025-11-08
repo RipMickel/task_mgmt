@@ -9,29 +9,18 @@ if (!check_role('instructor')) {
     exit;
 }
 
-// Fetch tasks assigned to this instructor
+// Fetch tasks assigned to this instructor (for initial load)
 $stmt = $pdo->prepare("SELECT t.*, u.name as coordinator_name FROM tasks t 
                        JOIN users u ON t.assigned_by=u.id 
                        WHERE t.assigned_to=? ORDER BY t.deadline ASC");
 $stmt->execute([$_SESSION['user_id']]);
 $tasks = $stmt->fetchAll();
 
-// Fetch all uploaded files by other instructors
-$filesStmt = $pdo->prepare("SELECT th.*, t.title as task_title, t.academic_year, u.name as instructor_name 
-                            FROM task_history th
-                            JOIN tasks t ON th.task_id = t.id
-                            JOIN users u ON t.assigned_to = u.id
-                            WHERE u.id != ? AND th.file_path IS NOT NULL
-                            ORDER BY th.completed_at DESC");
-$filesStmt->execute([$_SESSION['user_id']]);
-$uploadedFiles = $filesStmt->fetchAll();
-
 // Handle marking task as completed using Google Drive link
 if (isset($_POST['complete_task'])) {
     $task_id = $_POST['task_id'];
     $file_path = trim($_POST['drive_link']);
 
-    // Check deadline before submission
     $deadlineStmt = $pdo->prepare("SELECT deadline FROM tasks WHERE id = ?");
     $deadlineStmt->execute([$task_id]);
     $taskDeadline = $deadlineStmt->fetchColumn();
@@ -46,33 +35,71 @@ if (isset($_POST['complete_task'])) {
         $pdo->prepare("UPDATE tasks SET status='completed' WHERE id=?")->execute([$task_id]);
         $pdo->prepare("INSERT INTO task_history (task_id, completed_at, file_path) VALUES (?,NOW(),?)")
             ->execute([$task_id, $file_path]);
-        header("Location: dashboard.php");
-        exit();
-    }
-}
-// Check for upcoming deadlines (within 2 days)
-$upcomingTasks = [];
-$currentDate = new DateTime();
-foreach ($tasks as $task) {
-    if ($task['status'] === 'pending') {
-        $deadline = new DateTime($task['deadline']);
-        $interval = $currentDate->diff($deadline)->days;
-        $isFuture = $deadline > $currentDate;
-        if ($interval <= 2 && $isFuture) {
-            $upcomingTasks[] = $task['title'] . " (Deadline: " . $task['deadline'] . ")";
-        }
+        exit(json_encode(["success" => true]));
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <title>Instructor Dashboard</title>
-    <link rel="stylesheet" href="../instructor/instructor.css">
+
+    <!-- DataTables + jQuery -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.2/css/dataTables.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.2/js/dataTables.min.js"></script>
+
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f6f9;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+            width: 220px;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .sidebar ul li.active a {
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background: white;
+        }
+
         .welcome-container {
             display: flex;
             align-items: center;
@@ -86,6 +113,47 @@ foreach ($tasks as $task) {
             border-radius: 50%;
             object-fit: cover;
         }
+
+        table.dataTable {
+            width: 100% !important;
+            border-collapse: collapse;
+        }
+
+        .btn {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                text-align: center;
+            }
+
+            .main-content {
+                padding: 10px;
+            }
+        }
     </style>
 </head>
 
@@ -95,16 +163,15 @@ foreach ($tasks as $task) {
             <h2>Instructor Panel</h2>
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">Task History of All Instructors</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'logout.php' ? 'active' : '' ?>"><a href="../auth/logout.php">Logout</a></li>
+                <li><a href="task_history.php">Task History</a></li>
+                <li><a href="edit_profile.php">Edit Profile</a></li>
+                <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
 
         <main class="main-content">
             <div class="welcome-container">
                 <?php
-                // fallback if profile image is missing
                 $profilePic = !empty($_SESSION['profile_image'])
                     ? "../uploads/profiles/" . $_SESSION['profile_image']
                     : "../assets/images/default.png";
@@ -113,15 +180,10 @@ foreach ($tasks as $task) {
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
             </div>
 
-
-            <?php if (isset($error)): ?>
-                <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
-            <?php endif; ?>
-
             <section class="tasks" id="my-tasks">
                 <h2>Your Tasks</h2>
-                <?php if (count($tasks) > 0): ?>
-                    <table>
+                <div class="table-responsive">
+                    <table id="tasksTable" class="display">
                         <thead>
                             <tr>
                                 <th>Title</th>
@@ -133,7 +195,7 @@ foreach ($tasks as $task) {
                                 <th>Action</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tasks-body">
                             <?php foreach ($tasks as $task): ?>
                                 <tr>
                                     <td><?= htmlspecialchars($task['title']) ?></td>
@@ -144,36 +206,56 @@ foreach ($tasks as $task) {
                                     <td><?= htmlspecialchars($task['status']) ?></td>
                                     <td>
                                         <?php if ($task['status'] === 'pending'): ?>
-                                            <form method="post">
+                                            <form method="post" class="complete-form">
                                                 <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
-                                                <input type="url" name="drive_link" placeholder="Enter Google Drive link" required>
-                                                <button type="submit" name="complete_task" class="btn">Mark as Completed</button>
+                                                <input type="url" name="drive_link" placeholder="Google Drive link" required>
+                                                <button type="submit" class="btn">Mark Completed</button>
                                             </form>
                                         <?php else: ?>
                                             Completed
-                                            <?php if (!empty($task['file_path'])): ?>
-                                                <br><a href="<?= htmlspecialchars($task['file_path']) ?>" target="_blank">View Submission</a>
-                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
-                <?php else: ?>
-                    <p>No tasks assigned yet.</p>
-                <?php endif; ?>
+                </div>
             </section>
         </main>
     </div>
 
-    <script src="../assets/js/main.js"></script>
     <script>
-        <?php if (!empty($upcomingTasks)): ?>
-            let tasks = <?php echo json_encode($upcomingTasks); ?>;
-            let message = "⚠️ Upcoming Deadlines:\n\n" + tasks.join("\n");
-            alert(message);
-        <?php endif; ?>
+        let table;
+
+        $(document).ready(function() {
+            // Initialize DataTable
+            table = $('#tasksTable').DataTable({
+                responsive: true,
+                pageLength: 5
+            });
+
+            // Handle marking task as completed via AJAX
+            $(document).on('submit', '.complete-form', function(e) {
+                e.preventDefault();
+                $.post('dashboard.php', $(this).serialize(), function() {
+                    refreshTasks();
+                });
+            });
+
+            // Auto-refresh every 5 seconds
+            setInterval(refreshTasks, 5000);
+        });
+
+        // Refresh the task table via AJAX
+        function refreshTasks() {
+            $.ajax({
+                url: 'fetch_tasks.php',
+                method: 'GET',
+                success: function(data) {
+                    table.clear().rows.add($(data)).draw();
+                }
+            });
+        }
     </script>
 </body>
 
