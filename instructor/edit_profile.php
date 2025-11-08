@@ -51,6 +51,106 @@ $user = $stmt->fetch();
     <meta charset="UTF-8">
     <title>Edit Profile</title>
     <link rel="stylesheet" href="../instructor/instructor.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+
+        .dashboard-container {
+            display: flex;
+        }
+
+
+        .sidebar {
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+            width: 220px;
+        }
+
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .sidebar ul li.active a {
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            background-color: #ecf0f1;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table th,
+        table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #f4f4f4;
+            color: black;
+        }
+
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        a.btn,
+        a {
+            color: blue;
+            text-decoration: none;
+        }
+
+
+
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        .alert-error {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .alert-success {
+            color: white;
+        }
+    </style>
 </head>
 
 <body>
@@ -59,7 +159,7 @@ $user = $stmt->fetch();
             <h2>Instructor Panel</h2>
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
-                <li><a href="task_history.php">Task History of All Instructors</a></li>
+                <li><a href="task_history.php">Task History </a></li>
                 <li class="active"><a href="edit_profile.php">Edit Profile</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>

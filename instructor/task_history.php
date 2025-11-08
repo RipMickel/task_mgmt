@@ -59,22 +59,18 @@ $taskHistory = $stmt->fetchAll();
             display: flex;
         }
 
+
         .sidebar {
-            width: 220px;
-            background-color: #fff;
-            /* White background */
-            color: #000;
-            /* Black text */
-            min-height: 100vh;
+            background: #1a1a2e;
+            color: white;
             padding: 20px;
-            border-right: 2px solid #ddd;
-            /* Optional: adds a subtle border */
+            width: 220px;
         }
 
 
         .sidebar h2 {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .sidebar ul {
@@ -82,24 +78,19 @@ $taskHistory = $stmt->fetchAll();
             padding: 0;
         }
 
-        .sidebar ul li a {
-            color: #000;
-            /* Default text color */
-            text-decoration: none;
-            transition: 0.2s;
+        .sidebar ul li {
+            margin: 15px 0;
         }
 
-        .sidebar ul li a:hover {
-            color: #2e8b57;
-            /* Forest Green on hover */
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
         }
 
         .sidebar ul li.active a {
-            color: #008000;
             font-weight: bold;
-            /* Optional: makes the active link bold */
+            color: #ffd700;
         }
-
 
         .main-content {
             flex: 1;
@@ -165,7 +156,7 @@ $taskHistory = $stmt->fetchAll();
             <h2>Instructor Panel</h2>
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">Task History of All Instructors</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">Task History </a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'logout.php' ? 'active' : '' ?>"><a href="../auth/logout.php">Logout</a></li>
             </ul>
