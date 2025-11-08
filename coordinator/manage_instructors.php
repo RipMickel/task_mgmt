@@ -172,6 +172,7 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li class="active"><a href="manage_instructors.php">Manage Instructors</a></a></li>
                 <li><a href="edit_profile.php">Edit Profile</a></li>
                 <li><a href="user_logs.php">Recent Logins</a></li>
+
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>

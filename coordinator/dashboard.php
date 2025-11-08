@@ -210,11 +210,7 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
 
         <main class="main-content">
             <div class="welcome-container">
-                <?php
-                $profilePic = !empty($_SESSION['profile_image'])
-                    ? "../uploads/profiles/" . $_SESSION['profile_image']
-                    : "../assets/images/default.png";
-                ?>
+                <?php $profilePic = !empty($_SESSION['profile_image']) ? "../uploads/profiles/" . $_SESSION['profile_image'] : "../assets/images/default.png"; ?>
                 <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile">
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
             </div>
@@ -229,10 +225,10 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php endforeach; ?>
             </div>
 
-            <!-- Instructor Progress -->
+            <!-- Instructor Task Progress -->
             <div class="table-container">
                 <h2>Instructor Task Progress</h2>
-                <table>
+                <table id="progressTable" class="display">
                     <thead>
                         <tr>
                             <th>Instructor</th>
@@ -243,10 +239,7 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
                     </thead>
                     <tbody>
                         <?php foreach ($instructorProgress as $row):
-                            $progress = $row['total_tasks'] > 0
-                                ? round(($row['completed_tasks'] / $row['total_tasks']) * 100, 1)
-                                : 0;
-                        ?>
+                            $progress = $row['total_tasks'] > 0 ? round(($row['completed_tasks'] / $row['total_tasks']) * 100, 1) : 0; ?>
                             <tr>
                                 <td><?= htmlspecialchars($row['instructor_name']) ?></td>
                                 <td><?= $row['total_tasks'] ?></td>
@@ -258,10 +251,10 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
                 </table>
             </div>
 
-            <!-- Task Deadlines and Missed Submissions -->
+            <!-- Task Deadlines & Missed Submissions -->
             <div class="table-container">
                 <h2>Task Deadlines & Missed Submissions</h2>
-                <table>
+                <table id="tasksTable" class="display">
                     <thead>
                         <tr>
                             <th>Instructor</th>
@@ -272,30 +265,53 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
                     </thead>
                     <tbody>
                         <?php foreach ($tasks as $t):
-                            $isMissed = ($t['status'] != 'completed' && strtotime($t['deadline']) < time());
-                        ?>
+                            $isMissed = ($t['status'] != 'completed' && strtotime($t['deadline']) < time()); ?>
                             <tr class="<?= $isMissed ? 'missed' : '' ?>">
                                 <td><?= htmlspecialchars($t['instructor_name']) ?></td>
-                                <td><?= htmlspecialchars($t['task_title']) ?: '—' ?></td>
-                                <td><?= htmlspecialchars($t['deadline']) ?: 'No deadline' ?></td>
-                                <td class="<?= $isMissed ? 'missed-cell' : '' ?>">
-                                    <?= $isMissed ? 'Missed' : ucfirst($t['status'] ?: 'Pending') ?>
-                                </td>
+                                <td><?= htmlspecialchars($t['task_title'] ?: '—') ?></td>
+                                <td><?= htmlspecialchars($t['deadline'] ?: 'No deadline') ?></td>
+                                <td class="<?= $isMissed ? 'missed-cell' : '' ?>"><?= $isMissed ? 'Missed' : ucfirst($t['status'] ?: 'Pending') ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Chart -->
-            <div class="table-container" style="max-width: 600px;">
+            <!-- User Count Chart -->
+            <div class="table-container" style="max-width:600px;">
                 <canvas id="userChart"></canvas>
             </div>
         </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        $(document).ready(function() {
+            $('#progressTable').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true
+            });
+
+            var tasksTable = $('#tasksTable').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true
+            });
+
+            // Auto-refresh tasks table every 5 seconds
+            setInterval(function() {
+                $.ajax({
+                    url: 'fetch_instructor_progress.php',
+                    method: 'GET',
+                    success: function(data) {
+                        tasksTable.clear().draw();
+                        tasksTable.rows.add($(data)).draw();
+                    }
+                });
+            }, 5000);
+        });
+
+        // Chart.js
         const ctx = document.getElementById('userChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
