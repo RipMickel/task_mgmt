@@ -12,7 +12,7 @@ if (!check_role('admin')) {
     exit;
 }
 
-// ✅ User counts by role
+//  User counts by role
 $countStmt = $pdo->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
 $userCounts = $countStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -23,7 +23,7 @@ foreach ($userCounts as $row) {
     $counts[] = $row['count'];
 }
 
-// ✅ Instructor task progress
+// Instructor task progress
 $sql = "
     SELECT 
         u.name AS instructor_name,

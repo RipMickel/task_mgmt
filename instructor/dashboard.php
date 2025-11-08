@@ -26,31 +26,16 @@ $filesStmt = $pdo->prepare("SELECT th.*, t.title as task_title, t.academic_year,
 $filesStmt->execute([$_SESSION['user_id']]);
 $uploadedFiles = $filesStmt->fetchAll();
 
-// Handle marking task as completed with file upload
+// Handle marking task as completed using Google Drive link
 if (isset($_POST['complete_task'])) {
     $task_id = $_POST['task_id'];
-    $file_path = null;
+    $file_path = trim($_POST['drive_link']);
 
-    if (isset($_FILES['task_file']) && $_FILES['task_file']['error'] === UPLOAD_ERR_OK) {
-        $fileTmpPath = $_FILES['task_file']['tmp_name'];
-        $fileName = $_FILES['task_file']['name'];
-
-        $uploadDir = '../uploads/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-
-        $newFileName = time() . '_' . basename($fileName);
-        $dest_path = $uploadDir . $newFileName;
-
-        if (move_uploaded_file($fileTmpPath, $dest_path)) {
-            $file_path = $newFileName;
-        } else {
-            $error = "There was an error moving the uploaded file.";
-        }
+    if (empty($file_path)) {
+        $error = "Please provide a valid Google Drive link.";
+    } elseif (strpos($file_path, 'drive.google.com') === false) {
+        $error = "Invalid link. Please submit a Google Drive URL.";
     } else {
-        $error = "No file uploaded.";
-    }
-
-    if (!isset($error)) {
         $pdo->prepare("UPDATE tasks SET status='completed' WHERE id=?")->execute([$task_id]);
         $pdo->prepare("INSERT INTO task_history (task_id, completed_at, file_path) VALUES (?,NOW(),?)")
             ->execute([$task_id, $file_path]);
@@ -58,7 +43,6 @@ if (isset($_POST['complete_task'])) {
         exit();
     }
 }
-
 // Check for upcoming deadlines (within 2 days)
 $upcomingTasks = [];
 $currentDate = new DateTime();
@@ -153,15 +137,15 @@ foreach ($tasks as $task) {
                                     <td><?= htmlspecialchars($task['status']) ?></td>
                                     <td>
                                         <?php if ($task['status'] === 'pending'): ?>
-                                            <form method="post" enctype="multipart/form-data">
+                                            <form method="post">
                                                 <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
-                                                <input type="file" name="task_file" required>
+                                                <input type="url" name="drive_link" placeholder="Enter Google Drive link" required>
                                                 <button type="submit" name="complete_task" class="btn">Mark as Completed</button>
                                             </form>
                                         <?php else: ?>
                                             Completed
                                             <?php if (!empty($task['file_path'])): ?>
-                                                <br><a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank">View File</a>
+                                                <br><a href="<?= htmlspecialchars($task['file_path']) ?>" target="_blank">View Submission</a>
                                             <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
