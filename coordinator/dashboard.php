@@ -20,8 +20,24 @@ foreach ($userCounts as $row) {
     $counts[] = $row['count'];
 }
 
-// Fetch instructor task progress
+// Fetch instructor task progress with deadlines
 $sql = "
+    SELECT 
+        u.name AS instructor_name,
+        t.title AS task_title,
+        t.deadline,
+        t.status,
+        t.id AS task_id
+    FROM users u
+    LEFT JOIN tasks t ON u.id = t.assigned_to
+    WHERE u.role = 'instructor'
+    ORDER BY u.name, t.deadline ASC
+";
+$stmt = $pdo->query($sql);
+$tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Compute overall progress summary
+$progressStmt = $pdo->query("
     SELECT 
         u.name AS instructor_name,
         COUNT(t.id) AS total_tasks,
@@ -30,14 +46,14 @@ $sql = "
     LEFT JOIN tasks t ON u.id = t.assigned_to
     WHERE u.role = 'instructor'
     GROUP BY u.id, u.name
-";
-$stmt = $pdo->query($sql);
-$instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+");
+$instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
     <title>Coordinator Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -52,7 +68,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             min-height: 100vh;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 240px;
             background: #2c3e50;
@@ -91,7 +106,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-left: 4px solid #1abc9c;
         }
 
-        /* Main content */
         .main-content {
             flex-grow: 1;
             padding: 30px;
@@ -142,21 +156,12 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #2c3e50;
         }
 
-        .chart-container {
-            margin-top: 40px;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-        }
-
         .table-container {
-            margin-top: 40px;
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 40px;
         }
 
         table {
@@ -165,16 +170,25 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-top: 15px;
         }
 
-        table th,
-        table td {
+        th,
+        td {
             border: 1px solid #ddd;
             padding: 10px;
             text-align: center;
         }
 
-        table th {
+        th {
             background: #2c3e50;
             color: white;
+        }
+
+        tr.missed {
+            background-color: #ffe6e6;
+        }
+
+        .missed-cell {
+            color: #e74c3c;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -190,7 +204,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'user_logs.php' ? 'active' : '' ?>"><a href="user_logs.php">Recent Logins</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'completed_task.php' ? 'active' : '' ?>"><a href="completed_task.php">Completed Task</a></li>
-
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
@@ -206,7 +219,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
             </div>
 
-            <!-- Cards -->
+            <!-- Summary Cards -->
             <div class="cards">
                 <?php foreach ($userCounts as $uc): ?>
                     <div class="card">
@@ -216,7 +229,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php endforeach; ?>
             </div>
 
-            <!-- Instructor Task Progress -->
+            <!-- Instructor Progress -->
             <div class="table-container">
                 <h2>Instructor Task Progress</h2>
                 <table>
@@ -224,20 +237,20 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <tr>
                             <th>Instructor</th>
                             <th>Total Tasks</th>
-                            <th>Completed Tasks</th>
+                            <th>Completed</th>
                             <th>Progress (%)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($instructorTasks as $task):
-                            $progress = $task['total_tasks'] > 0
-                                ? round(($task['completed_tasks'] / $task['total_tasks']) * 100, 1)
+                        <?php foreach ($instructorProgress as $row):
+                            $progress = $row['total_tasks'] > 0
+                                ? round(($row['completed_tasks'] / $row['total_tasks']) * 100, 1)
                                 : 0;
                         ?>
                             <tr>
-                                <td><?= htmlspecialchars($task['instructor_name']) ?></td>
-                                <td><?= $task['total_tasks'] ?></td>
-                                <td><?= $task['completed_tasks'] ?></td>
+                                <td><?= htmlspecialchars($row['instructor_name']) ?></td>
+                                <td><?= $row['total_tasks'] ?></td>
+                                <td><?= $row['completed_tasks'] ?></td>
                                 <td><?= $progress ?>%</td>
                             </tr>
                         <?php endforeach; ?>
@@ -245,16 +258,46 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </table>
             </div>
 
+            <!-- Task Deadlines and Missed Submissions -->
+            <div class="table-container">
+                <h2>Task Deadlines & Missed Submissions</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Instructor</th>
+                            <th>Task Title</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($tasks as $t):
+                            $isMissed = ($t['status'] != 'completed' && strtotime($t['deadline']) < time());
+                        ?>
+                            <tr class="<?= $isMissed ? 'missed' : '' ?>">
+                                <td><?= htmlspecialchars($t['instructor_name']) ?></td>
+                                <td><?= htmlspecialchars($t['task_title']) ?: '—' ?></td>
+                                <td><?= htmlspecialchars($t['deadline']) ?: 'No deadline' ?></td>
+                                <td class="<?= $isMissed ? 'missed-cell' : '' ?>">
+                                    <?= $isMissed ? 'Missed' : ucfirst($t['status'] ?: 'Pending') ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
             <!-- Chart -->
-            <div class="chart-container">
+            <div class="table-container" style="max-width: 600px;">
                 <canvas id="userChart"></canvas>
             </div>
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const ctx = document.getElementById('userChart').getContext('2d');
-        const userChart = new Chart(ctx, {
+        new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: <?= json_encode($roles) ?>,
