@@ -31,7 +31,14 @@ if (isset($_POST['complete_task'])) {
     $task_id = $_POST['task_id'];
     $file_path = trim($_POST['drive_link']);
 
-    if (empty($file_path)) {
+    // Check deadline before submission
+    $deadlineStmt = $pdo->prepare("SELECT deadline FROM tasks WHERE id = ?");
+    $deadlineStmt->execute([$task_id]);
+    $taskDeadline = $deadlineStmt->fetchColumn();
+
+    if ($taskDeadline && new DateTime() > new DateTime($taskDeadline)) {
+        $error = "You can no longer submit this task. The deadline has passed.";
+    } elseif (empty($file_path)) {
         $error = "Please provide a valid Google Drive link.";
     } elseif (strpos($file_path, 'drive.google.com') === false) {
         $error = "Invalid link. Please submit a Google Drive URL.";
