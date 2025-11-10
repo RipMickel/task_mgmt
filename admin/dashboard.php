@@ -282,11 +282,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             });
         });
-
-        // 🔄 Reload page every 5 seconds
-        setInterval(function() {
-            location.reload();
-        }, 5000);
     </script>
 
 </body>

@@ -169,6 +169,8 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
                 <li><a href="assign_task.php">Assign Task</a></li>
+                <li><a href="completed_task.php">Completed Task</a></li>
+
                 <li class="active"><a href="manage_instructors.php">Manage Instructors</a></a></li>
                 <li><a href="edit_profile.php">Edit Profile</a></li>
                 <li><a href="user_logs.php">Recent Logins</a></li>
