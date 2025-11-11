@@ -218,15 +218,7 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
             </div>
 
-            <!-- Summary Cards -->
-            <div class="cards">
-                <?php foreach ($userCounts as $uc): ?>
-                    <div class="card">
-                        <h3><?= ucfirst($uc['role']) ?>s</h3>
-                        <p><?= $uc['count'] ?></p>
-                    </div>
-                <?php endforeach; ?>
-            </div>
+
 
             <!-- Instructor Task Progress -->
             <div class="table-container">
@@ -280,10 +272,7 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
                 </table>
             </div>
 
-            <!-- User Count Chart -->
-            <div class="table-container" style="max-width:600px;">
-                <canvas id="userChart"></canvas>
-            </div>
+
         </main>
     </div>
 
@@ -312,33 +301,6 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
                     }
                 });
             }, 5000);
-        });
-
-        // Chart.js
-        const ctx = document.getElementById('userChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: <?= json_encode($roles) ?>,
-                datasets: [{
-                    label: 'User Count',
-                    data: <?= json_encode($counts) ?>,
-                    backgroundColor: ['#27ae60', '#3498db', '#e74c3c']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
         });
     </script>
 </body>
