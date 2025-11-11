@@ -158,6 +158,81 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #f8d7da;
             color: #721c24;
         }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #ecf0f1;
+        }
+
+        tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        td a {
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+
+        td a[href*="action=approve"] {
+            color: #34495e;
+        }
+
+        td a[href*="action=approve"]:hover {
+            background-color: #34495e;
+            color: white;
+        }
+
+        td a[href*="action=deactivate"] {
+            color: red;
+        }
+
+        td a[href*="action=deactivate"]:hover {
+            background-color: green;
+            color: white;
+        }
+
+
+        td a[href*="action=activate"] {
+
+            color: #1abc9c;
+        }
+
+        td a[href*="action=activate"]:hover {
+            background-color: #1abc9c;
+            color: white;
+        }
+
+
+        td a[href*="action=delete"] {
+            color: red;
+        }
+
+        td a[href*="action=delete"]:hover {
+            background-color: green;
+            color: white;
+        }
     </style>
 </head>
 
