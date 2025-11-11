@@ -207,8 +207,6 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </select>
                     </div>
 
-
-
                     <div class="form-group">
                         <label for="description">Task Description</label>
                         <textarea name="description" rows="4" required></textarea>
@@ -234,13 +232,10 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="form-group">
                         <label for="academic_year">Academic Year</label>
                         <select name="academic_year" required>
-
                             <option value="2024-2025">2024-2025</option>
                             <option value="2025-2026">2025-2026</option>
-                            <option value="2026-2027">2025-2026</option>
-
-
-
+                            <option value="2026-2027">2026-2027</option>
+                        </select>
                     </div>
 
                     <button type="submit">Assign Task</button>

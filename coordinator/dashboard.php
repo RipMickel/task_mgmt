@@ -27,11 +27,12 @@ $sql = "
         t.title AS task_title,
         t.deadline,
         t.status,
+        t.created_at,
         t.id AS task_id
     FROM users u
     LEFT JOIN tasks t ON u.id = t.assigned_to
     WHERE u.role = 'instructor'
-    ORDER BY u.name, t.deadline ASC
+    ORDER BY t.created_at DESC, u.name, t.deadline ASC
 ";
 $stmt = $pdo->query($sql);
 $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -218,8 +219,6 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
             </div>
 
-
-
             <!-- Instructor Task Progress -->
             <div class="table-container">
                 <h2>Instructor Task Progress</h2>
@@ -271,8 +270,6 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
                     </tbody>
                 </table>
             </div>
-
-
         </main>
     </div>
 

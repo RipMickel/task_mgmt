@@ -9,19 +9,10 @@ if (!check_role('coordinator')) {
     exit;
 }
 
-// Fetch all task history with file uploads and academic year
-$stmt = $pdo->prepare("SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
-                       FROM task_history th
-                       JOIN tasks t ON th.task_id = t.id
-                       JOIN users u ON t.assigned_to = u.id
-                       JOIN users uc ON t.assigned_by = uc.id
-                       ORDER BY th.completed_at DESC");
-$stmt->execute();
-
 // Handle academic year search
 $academicYear = isset($_GET['academic_year']) ? $_GET['academic_year'] : '';
 
-// Fetch all task history with optional academic year filter
+// Prepare the SQL query for task history with optional academic year filter
 $sql = "SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
         FROM task_history th
         JOIN tasks t ON th.task_id = t.id
@@ -29,16 +20,18 @@ $sql = "SELECT th.*, t.title as task_title, t.description as task_desc, t.academ
         JOIN users uc ON t.assigned_by = uc.id";
 
 if ($academicYear) {
-    $sql .= " WHERE t.academic_year = ?";
+    $sql .= " WHERE t.academic_year = :academic_year";
     $sql .= " ORDER BY th.completed_at DESC";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$academicYear]);
+    $stmt->bindParam(':academic_year', $academicYear, PDO::PARAM_STR);
+    $stmt->execute();
 } else {
     $sql .= " ORDER BY th.completed_at DESC";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
 }
-$taskHistory = $stmt->fetchAll();
+
+$taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -149,15 +142,6 @@ $taskHistory = $stmt->fetchAll();
             color: #2c3e50;
         }
 
-        .chart-container {
-            margin-top: 40px;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-        }
-
         .table-container {
             margin-top: 40px;
             background: white;
@@ -183,6 +167,32 @@ $taskHistory = $stmt->fetchAll();
             background: #2c3e50;
             color: white;
         }
+
+        .search-form {
+            margin-bottom: 20px;
+        }
+
+        .search-form input {
+            padding: 8px;
+            font-size: 14px;
+            margin-right: 10px;
+            width: 200px;
+        }
+
+        .search-form button {
+            padding: 8px 16px;
+            font-size: 14px;
+            background: #1abc9c;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        .search-form .btn {
+            color: #e74c3c;
+            text-decoration: none;
+            margin-left: 10px;
+        }
     </style>
 </head>
 
@@ -202,9 +212,10 @@ $taskHistory = $stmt->fetchAll();
             </ul>
         </aside>
 
-
         <main class="main-content">
             <h1>Completed Task</h1>
+
+            <!-- Search Form -->
             <form method="GET" class="search-form">
                 <label for="academic_year">Search by Academic Year:</label>
                 <input type="text" name="academic_year" id="academic_year" value="<?= htmlspecialchars($academicYear) ?>" placeholder="e.g., 2025-2026">
