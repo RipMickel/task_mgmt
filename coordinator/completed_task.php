@@ -40,6 +40,13 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <title>Task History</title>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
     <style>
         body {
             margin: 0;
@@ -54,7 +61,7 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         /* Sidebar */
         .sidebar {
-            width: 240px;
+            width: 220px;
             background: #2c3e50;
             color: #fff;
             padding: 20px 0;
@@ -97,51 +104,6 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 30px;
         }
 
-        .welcome-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
-        .welcome-container img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            margin-right: 15px;
-            border: 2px solid #ddd;
-        }
-
-        .welcome-container h1 {
-            font-size: 22px;
-            margin: 0;
-        }
-
-        .cards {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            flex: 1;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        .card h3 {
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-
-        .card p {
-            font-size: 22px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-
         .table-container {
             margin-top: 40px;
             background: white;
@@ -161,6 +123,18 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border: 1px solid #ddd;
             padding: 10px;
             text-align: center;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+        }
+
+        table a {
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         table th {
@@ -176,8 +150,12 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 8px;
             font-size: 14px;
             margin-right: 10px;
-            width: 200px;
+            width: 100%;
+            max-width: 300px;
+            box-sizing: border-box;
+
         }
+
 
         .search-form button {
             padding: 8px 16px;
@@ -215,52 +193,62 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <main class="main-content">
             <h1>Completed Task</h1>
 
-            <!-- Search Form -->
-            <form method="GET" class="search-form">
-                <label for="academic_year">Search by Academic Year:</label>
-                <input type="text" name="academic_year" id="academic_year" value="<?= htmlspecialchars($academicYear) ?>" placeholder="e.g., 2025-2026">
-                <button type="submit">Search</button>
-                <a href="completed_task.php" class="btn">Reset</a>
-            </form>
+
 
             <?php if (count($taskHistory) > 0): ?>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Task Title</th>
-                            <th>Description</th>
-                            <th>Instructor</th>
-                            <th>Coordinator</th>
-                            <th>Academic Year</th>
-                            <th>Completed At</th>
-                            <th>File</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($taskHistory as $task): ?>
+                <!-- Table Container -->
+                <div class="table-container">
+                    <table id="taskHistoryTable">
+                        <thead>
                             <tr>
-                                <td><?= htmlspecialchars($task['task_title']) ?></td>
-                                <td><?= htmlspecialchars($task['task_desc']) ?></td>
-                                <td><?= htmlspecialchars($task['instructor_name']) ?></td>
-                                <td><?= htmlspecialchars($task['coordinator_name']) ?></td>
-                                <td><?= htmlspecialchars($task['academic_year']) ?></td>
-                                <td><?= htmlspecialchars($task['completed_at']) ?></td>
-                                <td>
-                                    <?php if (!empty($task['file_path'])): ?>
-                                        <a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank"><?= htmlspecialchars($task['file_path']) ?></a>
-                                    <?php else: ?>
-                                        N/A
-                                    <?php endif; ?>
-                                </td>
+                                <th>Task Title</th>
+                                <th>Description</th>
+                                <th>Instructor</th>
+                                <th>Coordinator</th>
+                                <th>Academic Year</th>
+                                <th>Completed At</th>
+                                <th>File</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($taskHistory as $task): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($task['task_title']) ?></td>
+                                    <td><?= htmlspecialchars($task['task_desc']) ?></td>
+                                    <td><?= htmlspecialchars($task['instructor_name']) ?></td>
+                                    <td><?= htmlspecialchars($task['coordinator_name']) ?></td>
+                                    <td><?= htmlspecialchars($task['academic_year']) ?></td>
+                                    <td><?= htmlspecialchars($task['completed_at']) ?></td>
+                                    <td>
+                                        <?php if (!empty($task['file_path'])): ?>
+                                            <a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank"><?= htmlspecialchars($task['file_path']) ?></a>
+                                        <?php else: ?>
+                                            N/A
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php else: ?>
                 <p>No task history available.</p>
             <?php endif; ?>
         </main>
     </div>
+
+    <!-- Initialize DataTables -->
+    <script>
+        $(document).ready(function() {
+            $('#taskHistoryTable').DataTable({
+                "pageLength": 10, // Number of rows per page
+                "searching": true, // Enable search functionality
+                "ordering": true, // Enable column sorting
+                "info": true, // Show info like "Showing 1 to 10 of 50 entries"
+                "lengthChange": false // Disable the page length dropdown
+            });
+        });
+    </script>
 </body>
 
 </html>
