@@ -137,6 +137,7 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'manage_users.php' ? 'active' : '' ?>">
                     <a href="manage_users.php">Manage Users</a>
                 </li>
+                <li><a href="user_logs.php">Recent Logins</a></li>
                 <li><a href="roles.php">Manage Roles</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>

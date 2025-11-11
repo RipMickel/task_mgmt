@@ -146,7 +146,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <li><a href="completed_task.php">Completed Task</a></li>
                 <li><a href="manage_instructors.php">List of Instructors</a></li>
                 <li class="active"><a href="edit_profile.php">Edit Profile</a></li>
-                <li><a href="user_logs.php">Recent Logins</a></li>
 
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>

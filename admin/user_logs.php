@@ -4,7 +4,7 @@ require_once "../inc/config.php";
 require_once "../inc/functions.php";
 redirect_if_not_logged_in();
 
-if (!check_role('coordinator')) {
+if (!check_role('admin')) {
     echo "Access Denied";
     exit;
 }
@@ -25,7 +25,7 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <head>
     <meta charset="UTF-8">
-    <title>Recent Logins - Coordinator</title>
+    <title>Recent Logins - Admin</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -131,15 +131,15 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="dashboard-container">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <h2>Coordinator Panel</h2>
+            <h2>Admin Panel</h2>
             <ul>
-                <li><a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li><a href="assign_task.php">Assign Task</a></li>
+                <li><a href="dashboard.php">Dashboard</a></li>
                 <li><a href="completed_task.php">Completed Task</a></li>
-                <li><a href="manage_instructors.php">Manage Instructors</a></li>
-                <li><a href="edit_profile.php"><i class="fas fa-user-edit"></i> Edit Profile</a></li>
-                <li class="active"><a href="user_logs.php"><i class="fas fa-list"></i>Recent Logins</a></li>
-                <li><a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li><a href="manage_users.php">Manage Users</a></li>
+                <li><a href="roles.php">Manage Roles</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'user_logs.php' ? 'active' : '' ?>">
+                    <a href="user_logs.php">Recent Logins</a>
+                <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
 
