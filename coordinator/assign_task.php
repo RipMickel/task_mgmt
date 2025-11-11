@@ -202,8 +202,12 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <form method="POST">
                     <div class="form-group">
                         <label for="title">Task Title</label>
-                        <input type="text" name="title" required>
+                        <select name="title" required>
+                            <option value="Syllabus">Syllabus</option>
+                        </select>
                     </div>
+
+
 
                     <div class="form-group">
                         <label for="description">Task Description</label>
@@ -229,7 +233,14 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     <div class="form-group">
                         <label for="academic_year">Academic Year</label>
-                        <input type="text" name="academic_year" placeholder="e.g. 2025-2026" required>
+                        <select name="academic_year" required>
+
+                            <option value="2024-2025">2024-2025</option>
+                            <option value="2025-2026">2025-2026</option>
+                            <option value="2026-2027">2025-2026</option>
+
+
+
                     </div>
 
                     <button type="submit">Assign Task</button>
