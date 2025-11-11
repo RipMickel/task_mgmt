@@ -12,7 +12,7 @@
 <img width="1902" height="915" alt="Screenshot 2025-11-11 223801" src="https://github.com/user-attachments/assets/8b042e1e-2ae6-4d2c-8705-24ddfd6774ea" />
 </h2>
 <h2>
-  <p>Change from search academic year only to filtered seach (data table)</p>
+  <p>*minor changes* from search academic year only to filtered seach (data table)</p>
 <img width="1867" height="915" alt="Screenshot 2025-11-11 223808" src="https://github.com/user-attachments/assets/ba1ffc31-1ffb-43f4-bdbb-f8b91e37245b" />
 </h2>
 <h2>
