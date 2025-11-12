@@ -12,12 +12,22 @@ if (!check_role('coordinator')) {
 // Handle academic year search
 $academicYear = isset($_GET['academic_year']) ? $_GET['academic_year'] : '';
 
-// Prepare the SQL query for task history with optional academic year filter
-$sql = "SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
-        FROM task_history th
-        JOIN tasks t ON th.task_id = t.id
-        JOIN users u ON t.assigned_to = u.id
-        JOIN users uc ON t.assigned_by = uc.id";
+$sql = "
+  SELECT th.task_id,
+         th.completed_at,
+         th.file_path,
+         th.drive_link,
+         t.title AS task_title,
+         t.description AS task_desc,
+         t.academic_year,
+         u.name AS instructor_name,
+         uc.name AS coordinator_name
+  FROM task_history th
+  JOIN tasks t ON th.task_id = t.id
+  JOIN users u ON t.assigned_to = u.id
+  JOIN users uc ON t.assigned_by = uc.id
+";
+
 
 if ($academicYear) {
     $sql .= " WHERE t.academic_year = :academic_year";
@@ -219,11 +229,16 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <td><?= htmlspecialchars($task['academic_year']) ?></td>
                                     <td><?= htmlspecialchars($task['completed_at']) ?></td>
                                     <td>
-                                        <?php if (!empty($task['file_path'])): ?>
-                                            <a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank"><?= htmlspecialchars($task['file_path']) ?></a>
-                                        <?php else: ?>
-                                            N/A
-                                        <?php endif; ?>
+                                        <?php
+                                        if (!empty($task['file_path'])) {
+                                            echo '<a href="../uploads/' . htmlspecialchars($task['file_path']) . '" target="_blank">View Uploaded File</a>';
+                                        } elseif (!empty($task['drive_link'])) {
+                                            echo '<a href="' . htmlspecialchars($task['drive_link']) . '" target="_blank">View Google Drive File</a>';
+                                        } else {
+                                            echo 'N/A';
+                                        }
+                                        ?>
+
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
