@@ -38,6 +38,19 @@ if (isset($_POST['complete_task'])) {
         exit(json_encode(["success" => true]));
     }
 }
+// Check for upcoming deadlines (within 2 days)
+$upcomingTasks = [];
+$currentDate = new DateTime();
+foreach ($tasks as $task) {
+    if ($task['status'] === 'pending') {
+        $deadline = new DateTime($task['deadline']);
+        $interval = $currentDate->diff($deadline)->days;
+        $isFuture = $deadline > $currentDate;
+        if ($interval <= 2 && $isFuture) {
+            $upcomingTasks[] = $task['title'] . " (Deadline: " . $task['deadline'] . ")";
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -256,6 +269,14 @@ if (isset($_POST['complete_task'])) {
                 }
             });
         }
+    </script>
+    <script src="../assets/js/main.js"></script>
+    <script>
+        <?php if (!empty($upcomingTasks)): ?>
+            let tasks = <?php echo json_encode($upcomingTasks); ?>;
+            let message = "⚠️ Upcoming Deadlines:\n\n" + tasks.join("\n");
+            alert(message);
+        <?php endif; ?>
     </script>
 </body>
 
