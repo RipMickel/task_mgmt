@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 12, 2025 at 01:36 PM
+-- Generation Time: Nov 11, 2025 at 04:33 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -32,22 +32,6 @@ CREATE TABLE `announcements` (
   `title` varchar(255) NOT NULL,
   `message` text NOT NULL,
   `created_at` datetime DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `class_schedule`
---
-
-CREATE TABLE `class_schedule` (
-  `id` int(11) NOT NULL,
-  `course` varchar(100) NOT NULL,
-  `section` varchar(50) NOT NULL,
-  `instructor_id` int(11) NOT NULL,
-  `day` varchar(20) NOT NULL,
-  `time` varchar(50) NOT NULL,
-  `room` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -91,7 +75,7 @@ INSERT INTO `tasks` (`id`, `instructor_id`, `title`, `description`, `assigned_to
 (1, 0, 'Meeting', 'very important meeting', 3, 5, '2025-08-24', '2025-08-25', '2025-2026', 'completed', '2025-08-24 15:42:30'),
 (2, 0, 'Upload your course syllabus', 'Must upload your course syllabus', 3, 5, '2025-08-24', '2025-08-26', '2025-2026', 'completed', '2025-08-24 15:59:33'),
 (3, 0, 'test', 'test', 3, 5, '2025-08-24', '2025-08-26', '2025-2026', 'completed', '2025-08-24 17:10:44'),
-(4, 0, 'Upload Course Syllabus', 'Must upload your course syllabus by the end of the week.', 6, 5, '2025-09-01', '2025-09-05', '2025-2026', 'pending', '2025-09-01 15:55:53'),
+(4, 0, 'Upload Course Syllabus', 'Must upload your course syllabus by the end of the week.', 6, 5, '2025-09-01', '2025-09-05', '2025-2026', 'completed', '2025-09-01 15:55:53'),
 (5, 0, 'test', 'test', 6, 5, '2025-09-10', '2025-09-12', '2025-2026', 'completed', '2025-09-10 05:30:28'),
 (6, 0, 'syllabus', 'pag pasa lang', 6, 5, '2025-09-10', '2025-09-11', '2025-2026', 'completed', '2025-09-10 08:15:07'),
 (7, 0, 'IT24 Syllabus', 'Pass the IT24 Syllabus', 6, 5, '2025-09-10', '2025-09-11', '2025-2026', 'completed', '2025-09-10 08:18:45'),
@@ -100,7 +84,11 @@ INSERT INTO `tasks` (`id`, `instructor_id`, `title`, `description`, `assigned_to
 (10, 0, 'Syllabus', 'test', 8, 5, '2025-09-11', '2025-09-19', '2025-2026', 'completed', '2025-09-11 22:41:40'),
 (11, 0, 'Syllabus', 'test\'\'', 9, 5, '2025-09-11', '2025-09-12', '2025-2026', 'completed', '2025-09-11 22:43:25'),
 (12, 0, 'Syllabus', 'test', 8, 5, '2025-09-11', '2025-09-13', '2025-2026', 'completed', '2025-09-11 22:48:02'),
-(13, 0, 'Syllabus', 'test', 11, 5, '2025-09-12', '2025-09-15', '2025-2026', 'pending', '2025-09-12 19:36:05');
+(13, 0, 'Syllabus', 'test', 11, 5, '2025-09-12', '2025-09-15', '2025-2026', 'pending', '2025-09-12 19:36:05'),
+(14, 0, 'Syllabus', 'submit your syllabus', 6, 5, '2025-11-08', '2025-11-10', '2025-2026', 'pending', '2025-11-08 18:53:04'),
+(15, 0, 'Test', 'Pass requirements ASAP', 7, 18, '2025-11-11', '2025-11-14', '2025', 'pending', '2025-11-11 14:32:11'),
+(16, 0, 'Syllabus', 'test', 6, 5, '2025-11-11', '2025-11-13', '2025-2026', 'pending', '2025-11-11 21:23:43'),
+(17, 0, 'Syllabus', 'test', 8, 5, '2025-11-11', '2025-11-14', '2024-2025', 'pending', '2025-11-11 21:53:00');
 
 -- --------------------------------------------------------
 
@@ -130,7 +118,8 @@ INSERT INTO `task_history` (`id`, `task_id`, `completed_at`, `file_path`) VALUES
 (8, 9, '2025-09-11 22:31:11', '1757601071_Learning.pdf'),
 (9, 10, '2025-09-11 22:42:00', '1757601720_Learning.pdf'),
 (10, 11, '2025-09-11 22:44:03', '1757601843_Learning.pdf'),
-(11, 12, '2025-09-11 22:48:21', '1757602101_Learning.pdf');
+(11, 12, '2025-09-11 22:48:21', '1757602101_Learning.pdf'),
+(12, 4, '2025-11-08 18:26:09', 'https://drive.google.com/file/d/1GU2CcNJmnCn8upw_HHNou5aT6BHRWAiF/view');
 
 -- --------------------------------------------------------
 
@@ -155,7 +144,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `profile_image`, `password`, `role`, `status`, `created_at`, `is_approved`) VALUES
-(1, 'Mickel Angelo Gaudicos', '20222356@nbsc.edu.ph', 'tan.webp', '$2y$10$Kxe.YnUOcWdAp40.cMN8ROi6xo319JRyVkR.LMrorUi0VkbZwOnc6', 'admin', 'pending', '2025-08-24 15:29:24', 0),
+(1, 'Mickel Angelo Gaudicos', '20222356@nbsc.edu.ph', 'profile_1_1762779139.jpg', '$2y$10$Kxe.YnUOcWdAp40.cMN8ROi6xo319JRyVkR.LMrorUi0VkbZwOnc6', 'admin', 'pending', '2025-08-24 15:29:24', 0),
 (3, 'instructor_example', 'instructor@nbsc.edu.ph', '1756712739_Screenshot (235).png', '$2y$10$ciduSod.63kB3hty13ZPzOHwMSnDoyJRqwpE8TAHrOVBUnP.JUudu', 'instructor', 'pending', '2025-08-24 15:31:10', 0),
 (5, 'Frank Joseph', 'coordinator@nbsc.edu.ph', NULL, '$2y$10$HXoRz2mNOGjSF/NbSupxxug5JzsBObpi1ifZG/iEBrCjndGpKmEUG', 'coordinator', 'pending', '2025-08-24 15:38:48', 0),
 (6, 'instructor_2', 'instructor_2@nbsc.edu.ph', '1756713093_Screenshot (235).png', '$2y$10$Nnm9Uu3MGdSPN4JxI.6SGOdpNt4BsOWLjlQgrHXVR/p5VFFGoY4.a', 'instructor', 'active', '2025-09-01 15:47:20', 0),
@@ -163,9 +152,9 @@ INSERT INTO `users` (`id`, `name`, `email`, `profile_image`, `password`, `role`,
 (8, 'Alladin Cagubcub', 'instructor_4@nbsc.edu.ph', NULL, '$2y$10$zUvSkPdXv93OV1cDMp2iGO/Ejlm56RNWW58XdW/a94a708JBxp.o6', 'instructor', 'active', '2025-09-11 22:04:03', 0),
 (9, 'Kaneki Ken', 'instructor_5@nbsc.edu.ph', NULL, '$2y$10$3.gE/9nhajZJKkiB6mnqFeoQxhQBMKiTrO9LvzHXSQSVVh1Sa4vFe', 'instructor', 'active', '2025-09-11 22:05:41', 0),
 (11, 'Monkey D. Luffy', 'instructor_6@nbsc.edu.ph', NULL, '$2y$10$bh3UWeyQ9kyE3koZMJvMb.gIAwku5rmlMzH3luWzA8nD40g4BL.TS', 'instructor', 'active', '2025-09-11 22:06:29', 0),
-(12, 'Bonsatsky Pitsuu', 'instructor_7@nbsc.edu.ph', NULL, '$2y$10$aygulyoejMUF4kqvGtZF4u3CPSFkzgNVbVup.LE//glKow58Twd3C', 'instructor', 'active', '2025-09-11 22:06:57', 0),
-(13, 'Gol D Roger', 'instructor_8@nbsc.edu.ph', NULL, '$2y$10$f.MnL1sS/DeC.G6h7DPDdOYmFWpMc/HMOF7rM6Ce2T4yWNcE3WOOe', 'instructor', 'active', '2025-09-11 22:07:32', 0),
-(14, 'Rocks D Xebec', 'instructor_9@nbsc.edu.ph', NULL, '$2y$10$f4tA7IjDlVis7eAAqG2zMO409XXq5N76De7fZkvCG4Ml/OP4rPRbu', 'instructor', 'active', '2025-09-11 22:07:53', 0);
+(16, 'instructor_Example2', 'instructor_example@nbsc.edu.ph', NULL, '$2y$10$6A2iMKDIInCWlLg6p2XfA.vE4t4imSGZnbrSX99CeBDuwajgfLqiW', 'instructor', 'pending', '2025-10-21 11:59:12', 0),
+(17, 'instructor_example3', 'instructor_example3@nbsc.edu.ph', NULL, '$2y$10$ryX3RzHz63MbDAfhHHaLSOPajsyQjl7Z6NsWwnzscLOS/j0qBHuKO', 'instructor', 'pending', '2025-10-21 12:00:03', 0),
+(18, 'Cliff Amadeus Evangelio', 'cafevangelio@nbsc.edu.ph', NULL, '$2y$10$g.XNRlihM7dyVLDBQLQYx.sbxl3HKEwTqaBRFkLPZkyNWz..ofZ8K', 'coordinator', 'pending', '2025-11-11 14:28:55', 0);
 
 -- --------------------------------------------------------
 
@@ -262,7 +251,55 @@ INSERT INTO `user_logs` (`id`, `user_id`, `action`, `ip_address`, `user_agent`, 
 (73, 5, 'User logged in', NULL, NULL, '2025-09-12 11:35:45'),
 (74, 5, 'Assigned task \'Syllabus\' to instructor ID 11', NULL, NULL, '2025-09-12 11:36:05'),
 (75, 9, 'User logged in', NULL, NULL, '2025-09-12 11:36:13'),
-(76, 11, 'User logged in', NULL, NULL, '2025-09-12 11:36:22');
+(76, 11, 'User logged in', NULL, NULL, '2025-09-12 11:36:22'),
+(77, 5, 'User logged in', NULL, NULL, '2025-10-21 03:45:17'),
+(78, 6, 'User logged in', NULL, NULL, '2025-10-21 03:45:40'),
+(79, 5, 'User logged in', NULL, NULL, '2025-10-21 03:46:51'),
+(80, 1, 'User logged in', NULL, NULL, '2025-10-21 03:47:51'),
+(81, 5, 'User logged in', NULL, NULL, '2025-10-21 04:02:33'),
+(82, 1, 'User logged in', NULL, NULL, '2025-10-21 04:02:52'),
+(83, 6, 'User logged in', NULL, NULL, '2025-10-21 04:03:10'),
+(84, 1, 'User logged in', NULL, NULL, '2025-10-21 04:08:03'),
+(85, 5, 'User logged in', NULL, NULL, '2025-10-21 04:08:45'),
+(86, 6, 'User logged in', NULL, NULL, '2025-10-21 04:09:05'),
+(87, 5, 'User logged in', NULL, NULL, '2025-11-08 10:16:29'),
+(88, 6, 'User logged in', NULL, NULL, '2025-11-08 10:16:55'),
+(89, 1, 'User logged in', NULL, NULL, '2025-11-08 10:17:21'),
+(90, 6, 'User logged in', NULL, NULL, '2025-11-08 10:18:02'),
+(91, 6, 'User logged in', NULL, NULL, '2025-11-08 10:27:06'),
+(92, 1, 'User logged in', NULL, NULL, '2025-11-08 10:31:55'),
+(93, 5, 'User logged in', NULL, NULL, '2025-11-08 10:32:13'),
+(94, 1, 'User logged in', NULL, NULL, '2025-11-08 10:32:35'),
+(95, 6, 'User logged in', NULL, NULL, '2025-11-08 10:36:48'),
+(96, 1, 'User logged in', NULL, NULL, '2025-11-08 10:41:44'),
+(97, 6, 'User logged in', NULL, NULL, '2025-11-08 10:41:55'),
+(98, 5, 'User logged in', NULL, NULL, '2025-11-08 10:52:28'),
+(99, 5, 'Assigned task \'Syllabus\' to instructor ID 6', NULL, NULL, '2025-11-08 10:53:04'),
+(100, 6, 'User logged in', NULL, NULL, '2025-11-08 10:53:18'),
+(101, 5, 'User logged in', NULL, NULL, '2025-11-08 11:11:15'),
+(102, 5, 'User logged in', NULL, NULL, '2025-11-10 12:35:30'),
+(103, 1, 'User logged in', NULL, NULL, '2025-11-10 12:36:30'),
+(104, 1, 'User logged in', NULL, NULL, '2025-11-10 12:38:50'),
+(105, 6, 'User logged in', NULL, NULL, '2025-11-10 12:39:45'),
+(106, 5, 'User logged in', NULL, NULL, '2025-11-10 12:39:56'),
+(107, 1, 'User logged in', NULL, NULL, '2025-11-10 12:40:24'),
+(108, 6, 'User logged in', NULL, NULL, '2025-11-10 12:55:10'),
+(109, 1, 'User logged in', NULL, NULL, '2025-11-10 13:52:32'),
+(110, 5, 'User logged in', NULL, NULL, '2025-11-10 13:52:47'),
+(111, 1, 'User logged in', NULL, NULL, '2025-11-10 13:59:58'),
+(112, 6, 'User logged in', NULL, NULL, '2025-11-11 02:53:17'),
+(113, 5, 'User logged in', NULL, NULL, '2025-11-11 02:53:52'),
+(114, 1, 'User logged in', NULL, NULL, '2025-11-11 02:54:23'),
+(115, 5, 'User logged in', NULL, NULL, '2025-11-11 02:55:52'),
+(116, 5, 'User logged in', NULL, NULL, '2025-11-11 06:24:22'),
+(117, 1, 'User logged in', NULL, NULL, '2025-11-11 06:28:13'),
+(118, 18, 'User logged in', NULL, NULL, '2025-11-11 06:30:00'),
+(119, 18, 'Assigned task \'Test\' to instructor ID 7', NULL, NULL, '2025-11-11 06:32:11'),
+(120, 5, 'User logged in', NULL, NULL, '2025-11-11 12:46:36'),
+(121, 5, 'Assigned task \'Syllabus\' to instructor ID 6', NULL, NULL, '2025-11-11 13:23:43'),
+(122, 5, 'Assigned task \'Syllabus\' to instructor ID 8', NULL, NULL, '2025-11-11 13:53:00'),
+(123, 5, 'User logged in', NULL, NULL, '2025-11-11 14:37:28'),
+(124, 5, 'User logged in', NULL, NULL, '2025-11-11 14:55:26');
 
 --
 -- Indexes for dumped tables
@@ -273,13 +310,6 @@ INSERT INTO `user_logs` (`id`, `user_id`, `action`, `ip_address`, `user_agent`, 
 --
 ALTER TABLE `announcements`
   ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `class_schedule`
---
-ALTER TABLE `class_schedule`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `instructor_id` (`instructor_id`);
 
 --
 -- Indexes for table `logs`
@@ -328,12 +358,6 @@ ALTER TABLE `announcements`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `class_schedule`
---
-ALTER TABLE `class_schedule`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `logs`
 --
 ALTER TABLE `logs`
@@ -343,35 +367,29 @@ ALTER TABLE `logs`
 -- AUTO_INCREMENT for table `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `task_history`
 --
 ALTER TABLE `task_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `user_logs`
 --
 ALTER TABLE `user_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=125;
 
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `class_schedule`
---
-ALTER TABLE `class_schedule`
-  ADD CONSTRAINT `class_schedule_ibfk_1` FOREIGN KEY (`instructor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `logs`
