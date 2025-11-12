@@ -10,13 +10,79 @@ if (!check_role('instructor')) {
 }
 
 // Fetch tasks assigned to this instructor
-$stmt = $pdo->prepare("SELECT t.*, u.name as coordinator_name FROM tasks t 
-                       JOIN users u ON t.assigned_by=u.id 
-                       WHERE t.assigned_to=? ORDER BY t.deadline ASC");
+$stmt = $pdo->prepare("
+    SELECT t.*, u.name as coordinator_name 
+    FROM tasks t 
+    JOIN users u ON t.assigned_by = u.id 
+    WHERE t.assigned_to = ? 
+    ORDER BY 
+        CASE WHEN t.status = 'pending' THEN 0 ELSE 1 END,  /* pending first */
+        t.deadline DESC                                  /* then latest deadline */
+");
 $stmt->execute([$_SESSION['user_id']]);
 $tasks = $stmt->fetchAll();
 
-// ... (the rest of your PHP logic: uploaded files, handle complete_task, upcomingTasks) ...
+// Handle marking task as completed with file upload OR Google Drive link
+if (isset($_POST['complete_task'])) {
+    $task_id   = $_POST['task_id'];
+    $file_path = null;
+    $drive_link = null;
+
+    // If file upload provided
+    if (isset($_FILES['task_file']) && $_FILES['task_file']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['task_file']['tmp_name'];
+        $fileName    = $_FILES['task_file']['name'];
+
+        $uploadDir = '../uploads/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+
+        $newFileName = time() . '_' . basename($fileName);
+        $dest_path   = $uploadDir . $newFileName;
+
+        if (move_uploaded_file($fileTmpPath, $dest_path)) {
+            $file_path = $newFileName;
+        } else {
+            $error = "There was an error moving the uploaded file.";
+        }
+    }
+
+    // If Google Drive link provided (optional submission)
+    if (isset($_POST['drive_link']) && !empty(trim($_POST['drive_link']))) {
+        $link = trim($_POST['drive_link']);
+        if (filter_var($link, FILTER_VALIDATE_URL) && (strpos($link, 'drive.google.com') !== false)) {
+            $drive_link = $link;
+        } else {
+            $error = "Please enter a valid Google Drive link.";
+        }
+    }
+
+    // If neither file nor link given
+    if ($file_path === null && $drive_link === null) {
+        $error = "No file uploaded or Drive link provided.";
+    }
+
+    if (!isset($error)) {
+        $pdo->prepare("UPDATE tasks SET status='completed' WHERE id=?")->execute([$task_id]);
+        $pdo->prepare("INSERT INTO task_history (task_id, completed_at, file_path, drive_link) VALUES (?, NOW(), ?, ?)")
+            ->execute([$task_id, $file_path, $drive_link]);
+        header("Location: dashboard.php");
+        exit();
+    }
+}
+
+// Check for upcoming deadlines (within 2 days)
+$upcomingTasks = [];
+$currentDate = new DateTime();
+foreach ($tasks as $task) {
+    if ($task['status'] === 'pending') {
+        $deadline = new DateTime($task['deadline']);
+        $interval = $currentDate->diff($deadline)->days;
+        $isFuture = $deadline > $currentDate;
+        if ($interval <= 2 && $isFuture) {
+            $upcomingTasks[] = $task['title'] . " (Deadline: " . $task['deadline'] . ")";
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -160,10 +226,10 @@ $tasks = $stmt->fetchAll();
             </div>
 
             <?php if (isset($error)): ?>
-                <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
+                <div class="alert-error"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
 
-            <section class="tasks" id="my-tasks">
+            <section class="tasks" id="my‑tasks">
                 <h2>Your Tasks</h2>
                 <?php if (count($tasks) > 0): ?>
                     <table id="tasksTable" class="display">
@@ -189,10 +255,10 @@ $tasks = $stmt->fetchAll();
                                     <td><?= htmlspecialchars($task['status']) ?></td>
                                     <td>
                                         <?php if ($task['status'] === 'pending'): ?>
-                                            <form method="post" enctype="multipart/form-data">
+                                            <form id="form_task_<?= $task['id'] ?>" action="" method="post" enctype="multipart/form-data">
                                                 <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
                                                 <input type="file" name="task_file">
-                                                <div class="drive-link-input">
+                                                <div class="drive‑link‑input">
                                                     <label for="drive_link_<?= $task['id'] ?>">Or submit Google Drive link:</label><br>
                                                     <input type="url" name="drive_link" id="drive_link_<?= $task['id'] ?>" placeholder="https://drive.google.com/…">
                                                 </div>
@@ -223,16 +289,15 @@ $tasks = $stmt->fetchAll();
     <script>
         $(document).ready(function() {
             $('#tasksTable').DataTable({
-                // you can add additional configuration here, for example:
                 "order": [
-                    [3, "asc"]
-                ], // default sort by deadline (4th column 0‑based is index 3)
-                "pageLength": 10, // show 10 rows per page
+                    [2, "asc"],
+                    [5, "desc"]
+                ],
+                "pageLength": 10,
                 "columnDefs": [{
-                        "orderable": false,
-                        "targets": 6
-                    } // disable ordering on the “Action” column
-                ]
+                    "orderable": false,
+                    "targets": 6
+                }]
             });
         });
 
