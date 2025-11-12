@@ -16,10 +16,11 @@ $stmt = $pdo->prepare("SELECT t.*, u.name as coordinator_name FROM tasks t
 $stmt->execute([$_SESSION['user_id']]);
 $tasks = $stmt->fetchAll();
 
-// Handle marking task as completed using Google Drive link
+// Handle marking task as completed using Google Drive link OR PDF file
 if (isset($_POST['complete_task'])) {
     $task_id = $_POST['task_id'];
-    $file_path = trim($_POST['drive_link']);
+    $file_path = trim($_POST['drive_link'] ?? '');
+    $uploaded_pdf = $_FILES['pdf_file'] ?? null;
 
     $deadlineStmt = $pdo->prepare("SELECT deadline FROM tasks WHERE id = ?");
     $deadlineStmt->execute([$task_id]);
@@ -27,15 +28,35 @@ if (isset($_POST['complete_task'])) {
 
     if ($taskDeadline && new DateTime() > new DateTime($taskDeadline)) {
         $error = "You can no longer submit this task. The deadline has passed.";
-    } elseif (empty($file_path)) {
-        $error = "Please provide a valid Google Drive link.";
-    } elseif (strpos($file_path, 'drive.google.com') === false) {
+    } elseif (empty($file_path) && empty($uploaded_pdf['name'])) {
+        $error = "Please provide a Google Drive link or upload a PDF file.";
+    } elseif (!empty($file_path) && strpos($file_path, 'drive.google.com') === false) {
         $error = "Invalid link. Please submit a Google Drive URL.";
     } else {
-        $pdo->prepare("UPDATE tasks SET status='completed' WHERE id=?")->execute([$task_id]);
-        $pdo->prepare("INSERT INTO task_history (task_id, completed_at, file_path) VALUES (?,NOW(),?)")
-            ->execute([$task_id, $file_path]);
-        exit(json_encode(["success" => true]));
+        // Handle PDF upload if no Drive link
+        if (empty($file_path) && !empty($uploaded_pdf['name'])) {
+            $ext = strtolower(pathinfo($uploaded_pdf['name'], PATHINFO_EXTENSION));
+            if ($ext !== 'pdf') {
+                $error = "Only PDF files are allowed.";
+            } elseif ($uploaded_pdf['size'] > 10 * 1024 * 1024) {
+                $error = "File too large. Maximum size is 10MB.";
+            } else {
+                $newName = uniqid("task_") . ".pdf";
+                $destPath = $pdfDir . $newName;
+                if (move_uploaded_file($uploaded_pdf['tmp_name'], $destPath)) {
+                    $file_path = $destPath;
+                } else {
+                    $error = "Failed to upload PDF file.";
+                }
+            }
+        }
+
+        if (empty($error)) {
+            $pdo->prepare("UPDATE tasks SET status='completed' WHERE id=?")->execute([$task_id]);
+            $pdo->prepare("INSERT INTO task_history (task_id, completed_at, file_path) VALUES (?,NOW(),?)")
+                ->execute([$task_id, $file_path]);
+            exit(json_encode(["success" => true]));
+        }
     }
 }
 // Check for upcoming deadlines (within 2 days)
@@ -219,10 +240,11 @@ foreach ($tasks as $task) {
                                     <td><?= htmlspecialchars($task['status']) ?></td>
                                     <td>
                                         <?php if ($task['status'] === 'pending'): ?>
-                                            <form method="post" class="complete-form">
+                                            <form method="post" enctype="multipart/form-data" class="complete-form">
                                                 <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
-                                                <input type="url" name="drive_link" placeholder="Google Drive link" required>
-                                                <button type="submit" class="btn">Mark Completed</button>
+                                                <input type="url" name="drive_link" placeholder="Google Drive link (optional)">
+                                                <input type="file" name="pdf_file" accept=".pdf">
+                                                <button type="submit" name="complete_task" class="btn">Mark Completed</button>
                                             </form>
                                         <?php else: ?>
                                             Completed
