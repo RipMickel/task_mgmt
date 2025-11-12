@@ -23,10 +23,11 @@ foreach ($tasks as $task): ?>
         <td><?= htmlspecialchars($task['status']) ?></td>
         <td>
             <?php if ($task['status'] === 'pending'): ?>
-                <form method="post" class="complete-form">
+                <form method="post" enctype="multipart/form-data" class="complete-form">
                     <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
-                    <input type="url" name="drive_link" placeholder="Google Drive link" required>
-                    <button type="submit" class="btn">Mark Completed</button>
+                    <input type="url" name="drive_link" placeholder="Google Drive link (optional)">
+                    <input type="file" name="pdf_file" accept=".pdf">
+                    <button type="submit" name="complete_task" class="btn">Mark Completed</button>
                 </form>
             <?php else: ?>
                 Completed
