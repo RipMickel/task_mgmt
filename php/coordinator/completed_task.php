@@ -9,6 +9,19 @@ if (!check_role('coordinator')) {
     exit;
 }
 
+// Handle delete request
+if (isset($_GET['delete_id'])) {
+    $delete_id = intval($_GET['delete_id']);
+    $deleteStmt = $pdo->prepare("DELETE FROM task_history WHERE task_id = :task_id");
+    $deleteStmt->bindParam(':task_id', $delete_id, PDO::PARAM_INT);
+    if ($deleteStmt->execute()) {
+        echo "<script>alert('Task deleted successfully!'); window.location='completed_task.php';</script>";
+        exit;
+    } else {
+        echo "<script>alert('Error deleting task.');</script>";
+    }
+}
+
 // Handle academic year search
 $academicYear = isset($_GET['academic_year']) ? $_GET['academic_year'] : '';
 
