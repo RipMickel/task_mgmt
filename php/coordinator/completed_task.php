@@ -230,6 +230,7 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <th>Academic Year</th>
                                 <th>Completed At</th>
                                 <th>File</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -251,8 +252,11 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             echo 'N/A';
                                         }
                                         ?>
-
                                     </td>
+                                    <td>
+                                        <a href="?delete_id=<?= $task['task_id'] ?>" onclick="return confirm('Are you sure you want to delete this task?');">
+                                            <button class="btn-delete">Delete</button>
+                                        </a>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
