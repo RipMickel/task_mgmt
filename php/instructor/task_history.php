@@ -9,36 +9,37 @@ if (!check_role('instructor')) {
     exit;
 }
 
-// Fetch all task history with file uploads and academic year
-$stmt = $pdo->prepare("SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
-                       FROM task_history th
-                       JOIN tasks t ON th.task_id = t.id
-                       JOIN users u ON t.assigned_to = u.id
-                       JOIN users uc ON t.assigned_by = uc.id
-                       ORDER BY th.completed_at DESC");
-$stmt->execute();
+$user_id = $_SESSION['user_id']; // Get current instructor ID
 
 // Handle academic year search
 $academicYear = isset($_GET['academic_year']) ? $_GET['academic_year'] : '';
 
-// Fetch all task history with optional academic year filter
-$sql = "SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year, u.name as instructor_name, uc.name as coordinator_name
+// Base SQL query filtered by current instructor
+$sql = "SELECT th.*, 
+               t.title as task_title, 
+               t.description as task_desc, 
+               t.academic_year, 
+               u.name as instructor_name, 
+               uc.name as coordinator_name
         FROM task_history th
         JOIN tasks t ON th.task_id = t.id
         JOIN users u ON t.assigned_to = u.id
-        JOIN users uc ON t.assigned_by = uc.id";
+        JOIN users uc ON t.assigned_by = uc.id
+        WHERE u.id = ?"; // Filter only current user's completed tasks
 
+// Apply academic year filter if provided
 if ($academicYear) {
-    $sql .= " WHERE t.academic_year = ?";
+    $sql .= " AND t.academic_year = ?";
     $sql .= " ORDER BY th.completed_at DESC";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$academicYear]);
+    $stmt->execute([$user_id, $academicYear]);
 } else {
     $sql .= " ORDER BY th.completed_at DESC";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute();
+    $stmt->execute([$user_id]);
 }
-$taskHistory = $stmt->fetchAll();
+
+$taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -46,7 +47,7 @@ $taskHistory = $stmt->fetchAll();
 
 <head>
     <meta charset="UTF-8">
-    <title>Task History</title>
+    <title>My Completed Tasks</title>
     <link rel="stylesheet" href="../instructor/instructor.css">
     <style>
         body {
@@ -59,14 +60,12 @@ $taskHistory = $stmt->fetchAll();
             display: flex;
         }
 
-
         .sidebar {
             background: #1a1a2e;
             color: white;
             padding: 20px;
             width: 220px;
         }
-
 
         .sidebar h2 {
             text-align: center;
@@ -131,8 +130,6 @@ $taskHistory = $stmt->fetchAll();
             text-decoration: none;
         }
 
-
-
         .alert {
             padding: 10px;
             margin-bottom: 15px;
@@ -156,15 +153,14 @@ $taskHistory = $stmt->fetchAll();
             <h2>Instructor Panel</h2>
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">Task History </a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">My Completed Tasks</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'logout.php' ? 'active' : '' ?>"><a href="../auth/logout.php">Logout</a></li>
+                <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
 
-
         <main class="main-content">
-            <h1>Task History of All Instructors</h1>
+            <h1>My Completed Tasks</h1>
             <form method="GET" class="search-form">
                 <label for="academic_year">Search by Academic Year:</label>
                 <input type="text" name="academic_year" id="academic_year" value="<?= htmlspecialchars($academicYear) ?>" placeholder="e.g., 2025-2026">
@@ -178,7 +174,6 @@ $taskHistory = $stmt->fetchAll();
                         <tr>
                             <th>Task Title</th>
                             <th>Description</th>
-                            <th>Instructor</th>
                             <th>Coordinator</th>
                             <th>Academic Year</th>
                             <th>Completed At</th>
@@ -190,13 +185,14 @@ $taskHistory = $stmt->fetchAll();
                             <tr>
                                 <td><?= htmlspecialchars($task['task_title']) ?></td>
                                 <td><?= htmlspecialchars($task['task_desc']) ?></td>
-                                <td><?= htmlspecialchars($task['instructor_name']) ?></td>
                                 <td><?= htmlspecialchars($task['coordinator_name']) ?></td>
                                 <td><?= htmlspecialchars($task['academic_year']) ?></td>
                                 <td><?= htmlspecialchars($task['completed_at']) ?></td>
                                 <td>
                                     <?php if (!empty($task['file_path'])): ?>
-                                        <a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank"><?= htmlspecialchars($task['file_path']) ?></a>
+                                        <a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank">View File</a>
+                                    <?php elseif (!empty($task['drive_link'])): ?>
+                                        <a href="<?= htmlspecialchars($task['drive_link']) ?>" target="_blank">View Drive File</a>
                                     <?php else: ?>
                                         N/A
                                     <?php endif; ?>
@@ -206,7 +202,7 @@ $taskHistory = $stmt->fetchAll();
                     </tbody>
                 </table>
             <?php else: ?>
-                <p>No task history available.</p>
+                <p>No completed tasks available.</p>
             <?php endif; ?>
         </main>
     </div>

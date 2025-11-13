@@ -200,7 +200,7 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
             <h2>Instructor Panel</h2>
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
-                <li><a href="task_history.php">Task History</a></li>
+                <li><a href="task_history.php">My Completed Tasks</a></li>
                 <li class="active"><a href="edit_profile.php">Edit Profile</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
