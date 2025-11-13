@@ -11,8 +11,8 @@ if (!check_role('instructor')) {
 
 $user_id = $_SESSION['user_id']; // Get current instructor ID
 
-// Handle academic year search
-$academicYear = isset($_GET['academic_year']) ? $_GET['academic_year'] : '';
+// Handle general search
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 // Base SQL query filtered by current instructor
 $sql = "SELECT th.*, 
@@ -25,14 +25,20 @@ $sql = "SELECT th.*,
         JOIN tasks t ON th.task_id = t.id
         JOIN users u ON t.assigned_to = u.id
         JOIN users uc ON t.assigned_by = uc.id
-        WHERE u.id = ?"; // Filter only current user's completed tasks
+        WHERE u.id = ?";
 
-// Apply academic year filter if provided
-if ($academicYear) {
-    $sql .= " AND t.academic_year = ?";
+// Apply search filter if provided
+if ($search) {
+    $sql .= " AND (
+                t.title LIKE ? OR 
+                t.description LIKE ? OR 
+                t.academic_year LIKE ? OR 
+                uc.name LIKE ?
+              )";
     $sql .= " ORDER BY th.completed_at DESC";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$user_id, $academicYear]);
+    $searchTerm = "%$search%";
+    $stmt->execute([$user_id, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
 } else {
     $sql .= " ORDER BY th.completed_at DESC";
     $stmt = $pdo->prepare($sql);
@@ -49,6 +55,10 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <title>My Completed Tasks</title>
     <link rel="stylesheet" href="../instructor/instructor.css">
+    <!-- ✅ DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -58,6 +68,7 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         .dashboard-container {
             display: flex;
+            min-height: 100vh;
         }
 
         .sidebar {
@@ -120,29 +131,36 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: black;
         }
 
-        table tr:hover {
-            background-color: #f1f1f1;
-        }
-
         a.btn,
         a {
             color: blue;
             text-decoration: none;
         }
 
-        .alert {
-            padding: 10px;
-            margin-bottom: 15px;
+        .search-form {
+            margin-bottom: 20px;
+        }
+
+        .search-form input {
+            padding: 8px;
+            width: 250px;
             border-radius: 5px;
+            border: 1px solid #ccc;
         }
 
-        .alert-error {
-            background-color: #e74c3c;
+        .search-form button {
+            padding: 8px 15px;
+            background-color: #1a1a2e;
             color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
 
-        .alert-success {
-            color: white;
+        .search-form .btn {
+            margin-left: 10px;
+            color: #1a1a2e;
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -161,15 +179,9 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <main class="main-content">
             <h1>My Completed Tasks</h1>
-            <form method="GET" class="search-form">
-                <label for="academic_year">Search by Academic Year:</label>
-                <input type="text" name="academic_year" id="academic_year" value="<?= htmlspecialchars($academicYear) ?>" placeholder="e.g., 2025-2026">
-                <button type="submit">Search</button>
-                <a href="task_history.php" class="btn">Reset</a>
-            </form>
 
             <?php if (count($taskHistory) > 0): ?>
-                <table>
+                <table id="tasksTable" class="display responsive nowrap">
                     <thead>
                         <tr>
                             <th>Task Title</th>
@@ -202,10 +214,31 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </tbody>
                 </table>
             <?php else: ?>
-                <p>No completed tasks available.</p>
+                <p>No completed tasks found.</p>
             <?php endif; ?>
         </main>
     </div>
+
+    <!-- ✅ jQuery & DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#tasksTable').DataTable({
+                responsive: true,
+                pageLength: 10,
+                lengthChange: true,
+                order: [
+                    [4, "desc"]
+                ],
+                language: {
+                    search: "Filter Records:"
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
