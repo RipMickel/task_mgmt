@@ -21,7 +21,7 @@ if (isset($_GET['token'])) {
                 $stmt->execute([$new_password, $user['id']]);
 
                 echo "Your password has been reset successfully!";
-                header("Location: login.php"); // Redirect to login page
+                header("Location: index.php"); // Redirect to login page
                 exit;
             }
         } else {

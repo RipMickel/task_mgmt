@@ -40,17 +40,92 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $to = $instructor['email'];
             $subject = "New Task Assigned: $title";
 
-            // HTML email message
-            $message = "<p>Hello " . htmlspecialchars($instructor['name']) . ",</p>";
-            $message .= "<p>A new task has been assigned to you by the coordinator.</p>";
-            $message .= "<ul>";
-            $message .= "<li><strong>Task Title:</strong> $title</li>";
-            $message .= "<li><strong>Description:</strong> $description</li>";
-            $message .= "<li><strong>Deadline:</strong> $deadline</li>";
-            $message .= "<li><strong>Academic Year:</strong> $academic_year</li>";
-            $message .= "</ul>";
-            $message .= "<p>Please check your dashboard for more details.</p>";
-            $message .= "<p>Regards,<br>Coordinator Team</p>";
+            $message = "
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>New Task Assigned</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f7fc;
+    }
+    .email-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #2e6c8b;
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    ul {
+      padding-left: 20px;
+      margin-bottom: 20px;
+    }
+    li {
+      font-size: 14px;
+    }
+    .footer {
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+      margin-top: 30px;
+    }
+    .task-info {
+      background-color: #f9f9f9;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .task-info strong {
+      color: #2e6c8b;
+    }
+    .task-info li {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class='email-container'>
+    <h1>Hello " . htmlspecialchars($instructor['name']) . ",</h1>
+    <p>A new task has been assigned to you by the coordinator.</p>
+    
+    <div class='task-info'>
+      <ul>
+        <li><strong>Task Title:</strong> $title</li>
+        <li><strong>Description:</strong> $description</li>
+        <li><strong>Deadline:</strong> $deadline</li>
+        <li><strong>Academic Year:</strong> $academic_year</li>
+      </ul>
+    </div>
+
+    <p>Please check your dashboard for more details.</p>
+    <p>Regards,<br>Coordinator Team</p>
+
+    <div class='footer'>
+      <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+";
+
+
 
             // Send email using PHPMailer
             $sent = sendEmailNotification($to, $subject, $message);
