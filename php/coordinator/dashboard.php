@@ -9,15 +9,15 @@ if (!check_role('coordinator')) {
     exit;
 }
 
+$coordinator_id = $_SESSION['user_id'];
+
 // Fetch user counts by role
 $countStmt = $pdo->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
 $userCounts = $countStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $roles = [];
-$counts = [];
 foreach ($userCounts as $row) {
-    $roles[] = ucfirst($row['role']);
-    $counts[] = $row['count'];
+    $roles[$row['role']] = $row['count'];
 }
 
 // Fetch instructor task progress with deadlines
@@ -49,6 +49,17 @@ $progressStmt = $pdo->query("
     GROUP BY u.id, u.name
 ");
 $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch initial total unread messages from instructors
+$unreadStmt = $pdo->prepare("
+    SELECT COUNT(*) AS unread_count
+    FROM messages
+    WHERE receiver_id = :coordinator_id
+      AND is_read = 0
+      AND sender_id IN (SELECT id FROM users WHERE role = 'instructor')
+");
+$unreadStmt->execute(['coordinator_id' => $coordinator_id]);
+$unreadMessages = (int)$unreadStmt->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -59,7 +70,6 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             margin: 0;
@@ -94,6 +104,7 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
 
         .sidebar ul li {
             margin: 10px 0;
+            position: relative;
         }
 
         .sidebar ul li a {
@@ -115,49 +126,33 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 30px;
         }
 
-        .welcome-container {
+        .header {
             display: flex;
+            justify-content: flex-end;
             align-items: center;
-            margin-bottom: 25px;
+            padding: 10px 30px;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .welcome-container img {
-            width: 60px;
-            height: 60px;
+        .bell-icon {
+            position: relative;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .bell-icon .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background: #e74c3c;
+            color: #fff;
+            font-size: 12px;
+            padding: 2px 6px;
             border-radius: 50%;
-            margin-right: 15px;
-            border: 2px solid #ddd;
-        }
-
-        .welcome-container h1 {
-            font-size: 22px;
-            margin: 0;
-        }
-
-        .cards {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            flex: 1;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        .card h3 {
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-
-        .card p {
-            font-size: 22px;
-            font-weight: bold;
-            color: #2c3e50;
         }
 
         .table-container {
@@ -166,12 +161,6 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             margin-top: 40px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
         }
 
         th,
@@ -207,37 +196,16 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'completed_task.php' ? 'active' : '' ?>"><a href="completed_task.php">Completed Task</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'manage_instructors.php' ? 'active' : '' ?>"><a href="manage_instructors.php">List of Instructors</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'chat_list.php' ? 'active' : '' ?>"><a href="chat_list.php">Feedback</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
 
         <main class="main-content">
-            <div class="welcome-container">
-                <?php
-                $profilePic = !empty($_SESSION['profile_image'])
-                    ? "../uploads/profiles/" . $_SESSION['profile_image']
-                    : "../assets/images/default.png";
-                ?>
-                <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" id="profile-pic" style="cursor:pointer;width:100px;height:100px;border-radius:50%;border:2px solid #ccc;object-fit:cover;">
-                <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?> (Coordinator)</h1>
-                <form id="upload-form" action="upload_profile.php" method="POST" enctype="multipart/form-data" style="display:none;">
-                    <input type="file" name="profile_image" id="profile-input" accept="image/*">
-                </form>
-            </div>
-
-            <script>
-                document.getElementById('profile-pic').addEventListener('click', function() {
-                    if (confirm('Do you want to add or change your profile image?')) {
-                        document.getElementById('profile-input').click();
-                    }
-                });
-                document.getElementById('profile-input').addEventListener('change', function() {
-                    if (this.files.length > 0) document.getElementById('upload-form').submit();
-                });
-            </script>
 
 
-            <!-- Instructor Task Progress -->
+            <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?> (Coordinator)</h1>
+
             <div class="table-container">
                 <h2>Instructor Task Progress</h2>
                 <table id="progressTable" class="display">
@@ -263,7 +231,6 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
                 </table>
             </div>
 
-            <!-- Task Deadlines & Missed Submissions -->
             <div class="table-container">
                 <h2>Task Deadlines & Missed Submissions</h2>
                 <table id="tasksTable" class="display">
@@ -293,26 +260,36 @@ $instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
 
     <script>
         $(document).ready(function() {
-            $('#progressTable').DataTable({
-                paging: true,
-                searching: true,
-                ordering: true
-            });
+            $('#progressTable, #tasksTable').DataTable();
 
-            var tasksTable = $('#tasksTable').DataTable({
-                paging: true,
-                searching: true,
-                ordering: true
-            });
+            let lastUnread = <?= $unreadMessages ?>;
 
-            // Auto-refresh tasks table every 5 seconds
+            function notifyNewMessage(count) {
+                alert("You have " + count + " new unread message(s) from instructors!");
+            }
+
+            // Check unread messages every 5 seconds
             setInterval(function() {
                 $.ajax({
-                    url: 'fetch_instructor_progress.php',
+                    url: 'fetch_unread_messages.php',
                     method: 'GET',
+                    dataType: 'json',
                     success: function(data) {
-                        tasksTable.clear().draw();
-                        tasksTable.rows.add($(data)).draw();
+                        let count = parseInt(data.unread) || 0;
+                        let badge = $('.bell-icon .notification-badge');
+
+                        if (count > 0) {
+                            if (badge.length) badge.text(count);
+                            else $('<span class="notification-badge">' + count + '</span>').appendTo('.bell-icon');
+                        } else {
+                            badge.remove();
+                        }
+
+                        if (count > lastUnread) notifyNewMessage(count);
+                        lastUnread = count;
+                    },
+                    error: function(err) {
+                        console.error("Unread messages fetch failed:", err);
                     }
                 });
             }, 5000);

@@ -84,6 +84,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <title>Login</title>
     <link rel="stylesheet" href="assets/css/index.css">
+    <style>
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            margin-top: 40px;
+        }
+
+        .footer a {
+            color: #2e6c8b;
+            text-decoration: none;
+        }
+
+        .footer p {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
 </head>
 
 <body>
@@ -127,6 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
     </script>
+
 
 </body>
 
