@@ -39,21 +39,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($instructor && !empty($instructor['email'])) {
             $to = $instructor['email'];
             $subject = "New Task Assigned: $title";
-            $message = "Hello " . htmlspecialchars($instructor['name']) . ",\n\n";
-            $message .= "A new task has been assigned to you by the coordinator.\n\n";
-            $message .= "Task Title: $title\n";
-            $message .= "Description: $description\n";
-            $message .= "Deadline: $deadline\n";
-            $message .= "Academic Year: $academic_year\n\n";
-            $message .= "Please check your dashboard for more details.\n\n";
-            $message .= "Regards,\nCoordinator Team";
 
-            // Send email
-            mail($to, $subject, $message);
-        }
-        $sent = mail($to, $subject, $message, $headers);
-        if (!$sent) {
-            error_log("Failed to send email to $to");
+            // HTML email message
+            $message = "<p>Hello " . htmlspecialchars($instructor['name']) . ",</p>";
+            $message .= "<p>A new task has been assigned to you by the coordinator.</p>";
+            $message .= "<ul>";
+            $message .= "<li><strong>Task Title:</strong> $title</li>";
+            $message .= "<li><strong>Description:</strong> $description</li>";
+            $message .= "<li><strong>Deadline:</strong> $deadline</li>";
+            $message .= "<li><strong>Academic Year:</strong> $academic_year</li>";
+            $message .= "</ul>";
+            $message .= "<p>Please check your dashboard for more details.</p>";
+            $message .= "<p>Regards,<br>Coordinator Team</p>";
+
+            // Send email using PHPMailer
+            $sent = sendEmailNotification($to, $subject, $message);
+
+            if (!$sent) {
+                error_log("Failed to send email to $to");
+            }
         }
 
         $_SESSION['success'] = "Task assigned successfully!";
@@ -77,7 +81,6 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>Assign Task - Coordinator</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
-        /* Your existing CSS here */
         body {
             margin: 0;
             font-family: Arial, sans-serif;

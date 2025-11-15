@@ -1,5 +1,19 @@
 {
+    "name": "mickel/task_mgmt",
+    "description": "composer require phpmailer/phpmailer",
+    "autoload": {
+        "psr-4": {
+            "Mickel\\TaskMgmt\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "RipMickel",
+            "email": "gaudicosmickelangelo@gmail.com"
+        }
+    ],
     "require": {
-        "phpmailer/phpmailer": "^7.0"
+        "phpmailer/phpmailer": "^7.0",
+        "league/oauth2-google": "^4.0"
     }
 }
