@@ -20,6 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $assigned_by = $_SESSION['user_id'];
 
     if (!empty($title) && !empty($description) && !empty($assigned_to) && !empty($deadline) && !empty($academic_year)) {
+        // Insert task
         $stmt = $pdo->prepare("INSERT INTO tasks (title, description, assigned_to, assigned_by, deadline, academic_year, date_assigned) 
                                VALUES (?, ?, ?, ?, ?, ?, NOW())");
         $stmt->execute([$title, $description, $assigned_to, $assigned_by, $deadline, $academic_year]);
@@ -27,6 +28,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Insert into user_logs
         $log_stmt = $pdo->prepare("INSERT INTO user_logs (user_id, action) VALUES (?, ?)");
         $log_stmt->execute([$assigned_by, "Assigned task '$title' to instructor ID $assigned_to"]);
+
+        // Send email notification to assigned instructor
+        $instructor_stmt = $pdo->prepare("SELECT email, name FROM users WHERE id = ?");
+        $instructor_stmt->execute([$assigned_to]);
+        $instructor = $instructor_stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($instructor && !empty($instructor['email'])) {
+            $to = $instructor['email'];
+            $subject = "New Task Assigned: $title";
+            $message = "Hello " . htmlspecialchars($instructor['name']) . ",\n\n";
+            $message .= "A new task has been assigned to you by the coordinator.\n\n";
+            $message .= "Task Title: $title\n";
+            $message .= "Description: $description\n";
+            $message .= "Deadline: $deadline\n";
+            $message .= "Academic Year: $academic_year\n\n";
+            $message .= "Please check your dashboard for more details.\n\n";
+            $message .= "Regards,\nCoordinator Team";
+
+            // Send email
+            mail($to, $subject, $message);
+        }
 
         $_SESSION['success'] = "Task assigned successfully!";
         header("Location: assign_task.php");
@@ -49,6 +71,7 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>Assign Task - Coordinator</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
+        /* Your existing CSS here */
         body {
             margin: 0;
             font-family: Arial, sans-serif;
@@ -60,7 +83,6 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
             min-height: 100vh;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 240px;
             background: #2c3e50;
@@ -99,7 +121,6 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-left: 4px solid #1abc9c;
         }
 
-        /* Main content */
         .main-content {
             flex-grow: 1;
             padding: 30px;
@@ -169,7 +190,6 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <h2>Coordinator Panel</h2>
             <ul>
@@ -178,12 +198,10 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li><a href="completed_task.php">Completed Task</a></li>
                 <li><a href="manage_instructors.php">List of Instructors</a></li>
                 <li><a href="edit_profile.php">Edit Profile</a></li>
-
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
             <div class="form-container">
                 <h2>Assign Task</h2>
