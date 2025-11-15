@@ -41,6 +41,12 @@ if ($academicYear) {
 }
 
 $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Analytics Data (This can be adjusted to match the specific analytics you want)
+$taskCount = count($taskHistory);
+$academicYears = array_column($taskHistory, 'academic_year');
+$uniqueYears = array_unique($academicYears);
+$tasksPerYear = array_count_values($academicYears);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -49,6 +55,8 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <title>Task History</title>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.js"></script>
     <style>
         body {
             margin: 0;
@@ -134,6 +142,33 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
         table tbody tr:hover {
             background: #f1f1f1;
         }
+
+        .analytics-section {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .analytics-section h2 {
+            margin-bottom: 15px;
+        }
+
+        .print-btn {
+            background-color: #16a085;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .print-btn:hover {
+            background-color: #1abc9c;
+        }
     </style>
 </head>
 
@@ -156,14 +191,16 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <main class="main-content">
             <h1>Completed Task</h1>
 
-            <form method="GET" class="search-form">
-                <label for="academic_year">Search by Academic Year:</label>
-                <input type="text" id="academic_year" name="academic_year" placeholder="e.g. 2024-2025"
-                    value="<?= htmlspecialchars($academicYear) ?>">
-                <button type="submit">Search</button>
-                <a href="completed_task.php" class="btn">Clear</a>
-            </form>
+            <!-- Analytics Section -->
+            <div class="analytics-section">
+                <h2>Task Analytics</h2>
+                <canvas id="taskChart" width="400" height="200"></canvas>
+                <div>
+                    <button class="print-btn" onclick="printToPDF()">Print to PDF</button>
+                </div>
+            </div>
 
+            <!-- Task Table -->
             <?php if (count($taskHistory) > 0): ?>
                 <div class="table-container">
                     <table id="taskTable" class="display">
@@ -212,6 +249,7 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script>
+        // Initialize DataTable
         $(document).ready(function() {
             $('#taskTable').DataTable({
                 "pageLength": 10,
@@ -222,6 +260,52 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             });
         });
+
+        // Generate the chart with task analytics
+        var ctx = document.getElementById('taskChart').getContext('2d');
+        var taskChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode(array_keys($tasksPerYear)) ?>,
+                datasets: [{
+                    label: 'Tasks per Academic Year',
+                    data: <?= json_encode(array_values($tasksPerYear)) ?>,
+                    backgroundColor: 'rgba(26, 188, 156, 0.6)',
+                    borderColor: 'rgba(26, 188, 156, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Print to PDF
+        function printToPDF() {
+            var element = document.querySelector('.main-content');
+            var opt = {
+                margin: 1,
+                filename: 'task-history.pdf',
+                image: {
+                    type: 'jpeg',
+                    quality: 0.98
+                },
+                html2canvas: {
+                    scale: 2
+                },
+                jsPDF: {
+                    unit: 'in',
+                    format: 'letter',
+                    orientation: 'portrait'
+                }
+            };
+            html2pdf().from(element).set(opt).save();
+        }
     </script>
 </body>
 

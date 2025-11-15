@@ -29,7 +29,8 @@ $sql = "
         u.id AS instructor_id,
         u.name AS instructor_name,
         COUNT(t.id) AS total_tasks,
-        SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) AS completed_tasks
+        SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) AS completed_tasks,
+        SUM(CASE WHEN t.status = 'pending' THEN 1 ELSE 0 END) AS pending_tasks
     FROM users u
     LEFT JOIN tasks t ON u.id = t.assigned_to
     WHERE u.role = 'instructor'
@@ -46,6 +47,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.js"></script>
     <style>
         body {
             margin: 0;
@@ -115,14 +117,6 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .welcome-container img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            margin-right: 15px;
-            border: 2px solid #3498db;
-        }
-
         .cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -158,27 +152,25 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-top: 20px;
         }
 
-        .progress-bar {
-            background: #ecf0f1;
-            border-radius: 6px;
-            overflow: hidden;
-            height: 20px;
-            width: 100%;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #27ae60, #2ecc71);
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            line-height: 20px;
-            transition: width 0.6s ease;
-        }
-
         table.dataTable thead th {
             background: #2c3e50;
             color: white;
+        }
+
+        /* Print Button Styling */
+        .print-btn {
+            background-color: #16a085;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .print-btn:hover {
+            background-color: #1abc9c;
         }
 
         /* Modal styling */
@@ -215,6 +207,12 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .close-modal:hover {
             color: black;
         }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
     </style>
 </head>
 
@@ -245,21 +243,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 ?>
                 <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" id="profile-pic" style="cursor:pointer;width:100px;height:100px;border-radius:50%;border:2px solid #ccc;object-fit:cover;">
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?> (Admin)</h1>
-                <form id="upload-form" action="upload_profile.php" method="POST" enctype="multipart/form-data" style="display:none;">
-                    <input type="file" name="profile_image" id="profile-input" accept="image/*">
-                </form>
             </div>
-
-            <script>
-                document.getElementById('profile-pic').addEventListener('click', function() {
-                    if (confirm('Do you want to add or change your profile image?')) {
-                        document.getElementById('profile-input').click();
-                    }
-                });
-                document.getElementById('profile-input').addEventListener('change', function() {
-                    if (this.files.length > 0) document.getElementById('upload-form').submit();
-                });
-            </script>
 
             <!-- Cards -->
             <div class="cards">
@@ -280,6 +264,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <th>Instructor</th>
                             <th>Total Tasks</th>
                             <th>Completed Tasks</th>
+                            <th>Pending Tasks</th>
                             <th>Progress (%)</th>
                         </tr>
                     </thead>
@@ -293,6 +278,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <td class="instructor-name" data-id="<?= $task['instructor_id'] ?>" style="cursor:pointer;color:#2980b9;"><?= htmlspecialchars($task['instructor_name']) ?></td>
                                 <td><?= $task['total_tasks'] ?></td>
                                 <td><?= $task['completed_tasks'] ?></td>
+                                <td><?= $task['pending_tasks'] ?></td>
                                 <td>
                                     <div class="progress-bar">
                                         <div class="progress-fill" style="width:<?= $progress ?>%;"><?= $progress ?>%</div>
@@ -302,6 +288,21 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Analytics Section with Chart -->
+            <div class="analytics-container">
+                <h2>Task Analytics</h2>
+                <div class="chart-container">
+                    <canvas id="taskAnalyticsChart"></canvas>
+                </div>
+
+                <p>Total Pending Tasks: <?= array_sum(array_column($instructorTasks, 'pending_tasks')) ?></p>
+                <p>Total Completed Tasks: <?= array_sum(array_column($instructorTasks, 'completed_tasks')) ?></p>
+                <p>Total Tasks: <?= array_sum(array_column($instructorTasks, 'total_tasks')) ?></p>
+
+                <!-- Print Button -->
+                <button class="print-btn" onclick="printAnalytics()">Print Analytics</button>
             </div>
         </main>
     </div>
@@ -337,48 +338,60 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             });
 
-            // Modal logic
-            var modal = document.getElementById("taskModal");
-            var span = document.getElementsByClassName("close-modal")[0];
-
-            span.onclick = function() {
-                modal.style.display = "none";
-            }
-
-            window.onclick = function(event) {
-                if (event.target == modal) {
-                    modal.style.display = "none";
-                }
-            }
-
-            $('.instructor-name').on('click', function() {
-                var instructorId = $(this).data('id');
-                // Clear previous table
-                $('#taskList tbody').empty();
-
-                $.ajax({
-                    url: 'get_instructor_tasks.php',
-                    method: 'GET',
-                    data: {
-                        instructor_id: instructorId
+            // Set up Chart.js
+            var ctx = document.getElementById('taskAnalyticsChart').getContext('2d');
+            var taskAnalyticsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Total Tasks', 'Completed Tasks', 'Pending Tasks'],
+                    datasets: [{
+                        label: 'Task Analytics',
+                        data: [
+                            <?= array_sum(array_column($instructorTasks, 'total_tasks')) ?>,
+                            <?= array_sum(array_column($instructorTasks, 'completed_tasks')) ?>,
+                            <?= array_sum(array_column($instructorTasks, 'pending_tasks')) ?>
+                        ],
+                        backgroundColor: ['#3498db', '#2ecc71', '#e74c3c'],
+                        borderColor: ['#2980b9', '#27ae60', '#c0392b'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        duration: 1000, // Animation duration (1 second)
+                        easing: 'easeInOutQuad'
                     },
-                    dataType: 'json',
-                    success: function(data) {
-                        if (data.length === 0) {
-                            $('#taskList tbody').append('<tr><td colspan="3" style="text-align:center;">No tasks found</td></tr>');
-                        } else {
-                            data.forEach(function(task) {
-                                $('#taskList tbody').append('<tr><td>' + task.name + '</td><td>' + task.status + '</td><td>' + task.description + '</td></tr>');
-                            });
+                    scales: {
+                        y: {
+                            beginAtZero: true
                         }
-                        modal.style.display = "block";
-                    },
-                    error: function() {
-                        alert('Error fetching tasks');
                     }
-                });
+                }
             });
         });
+
+        // Print Analytics Section
+        function printAnalytics() {
+            var element = document.querySelector('.analytics-container');
+            var opt = {
+                margin: 1,
+                filename: 'task_analytics.pdf',
+                image: {
+                    type: 'jpeg',
+                    quality: 0.98
+                },
+                html2canvas: {
+                    scale: 2
+                },
+                jsPDF: {
+                    unit: 'in',
+                    format: 'letter',
+                    orientation: 'portrait'
+                }
+            };
+            html2pdf().from(element).set(opt).save();
+        }
     </script>
 </body>
 

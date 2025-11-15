@@ -78,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 
@@ -104,6 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit">Login</button>
         </form>
 
+        <!-- Forgot Password Link -->
+        <p><a href="forgot_password.php">Forgot your password?</a></p>
     </div>
 
     <script>
