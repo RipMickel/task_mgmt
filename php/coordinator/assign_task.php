@@ -2,6 +2,8 @@
 session_start();
 require_once "../inc/config.php";
 require_once "../inc/functions.php";
+require_once "send_email.php";
+
 redirect_if_not_logged_in();
 
 // Only coordinators or admins can assign tasks
@@ -48,6 +50,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Send email
             mail($to, $subject, $message);
+        }
+        $sent = mail($to, $subject, $message, $headers);
+        if (!$sent) {
+            error_log("Failed to send email to $to");
         }
 
         $_SESSION['success'] = "Task assigned successfully!";
