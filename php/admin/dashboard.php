@@ -12,7 +12,7 @@ if (!check_role('admin')) {
     exit;
 }
 
-//  User counts by role
+// User counts by role
 $countStmt = $pdo->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
 $userCounts = $countStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -26,6 +26,7 @@ foreach ($userCounts as $row) {
 // Instructor task progress
 $sql = "
     SELECT 
+        u.id AS instructor_id,
         u.name AS instructor_name,
         COUNT(t.id) AS total_tasks,
         SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) AS completed_tasks
@@ -179,6 +180,41 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #2c3e50;
             color: white;
         }
+
+        /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 8px;
+        }
+
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: black;
+        }
     </style>
 </head>
 
@@ -254,7 +290,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 : 0;
                         ?>
                             <tr>
-                                <td><?= htmlspecialchars($task['instructor_name']) ?></td>
+                                <td class="instructor-name" data-id="<?= $task['instructor_id'] ?>" style="cursor:pointer;color:#2980b9;"><?= htmlspecialchars($task['instructor_name']) ?></td>
                                 <td><?= $task['total_tasks'] ?></td>
                                 <td><?= $task['completed_tasks'] ?></td>
                                 <td>
@@ -270,6 +306,24 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </main>
     </div>
 
+    <!-- Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Instructor Tasks</h2>
+            <table id="taskList" style="width:100%;border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>Task Name</th>
+                        <th>Status</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script>
@@ -282,9 +336,50 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     "search": "Filter records:"
                 }
             });
+
+            // Modal logic
+            var modal = document.getElementById("taskModal");
+            var span = document.getElementsByClassName("close-modal")[0];
+
+            span.onclick = function() {
+                modal.style.display = "none";
+            }
+
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+
+            $('.instructor-name').on('click', function() {
+                var instructorId = $(this).data('id');
+                // Clear previous table
+                $('#taskList tbody').empty();
+
+                $.ajax({
+                    url: 'get_instructor_tasks.php',
+                    method: 'GET',
+                    data: {
+                        instructor_id: instructorId
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.length === 0) {
+                            $('#taskList tbody').append('<tr><td colspan="3" style="text-align:center;">No tasks found</td></tr>');
+                        } else {
+                            data.forEach(function(task) {
+                                $('#taskList tbody').append('<tr><td>' + task.name + '</td><td>' + task.status + '</td><td>' + task.description + '</td></tr>');
+                            });
+                        }
+                        modal.style.display = "block";
+                    },
+                    error: function() {
+                        alert('Error fetching tasks');
+                    }
+                });
+            });
         });
     </script>
-
 </body>
 
 </html>
