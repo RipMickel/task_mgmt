@@ -54,7 +54,6 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <title>My Completed Tasks</title>
-    <link rel="stylesheet" href="../instructor/instructor.css">
     <!-- ✅ DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
@@ -72,35 +71,42 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .sidebar {
-            background: #1a1a2e;
+            width: 260px;
+            background: #0c1b33;
             color: white;
-            padding: 20px;
-            width: 220px;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar h2 {
             text-align: center;
-            margin-bottom: 20px;
+            font-weight: 700;
+            margin-bottom: 30px;
         }
 
         .sidebar ul {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
 
-        .sidebar ul li {
-            margin: 15px 0;
-        }
-
-        .sidebar ul li a {
-            color: white;
+        .sidebar a {
+            display: block;
+            padding: 12px 15px;
             text-decoration: none;
+            color: #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            transition: 0.25s;
         }
 
-        .sidebar ul li.active a {
-            font-weight: bold;
-            color: #ffd700;
+        .sidebar a:hover,
+        .sidebar .active a {
+            background: #1e2a47;
+            color: #fff;
         }
+
 
         .main-content {
             flex: 1;
@@ -162,6 +168,49 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #1a1a2e;
             text-decoration: underline;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 800px;
+            position: relative;
+        }
+
+        .modal-close {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: black;
+        }
+
+        .modal iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+        }
     </style>
 </head>
 
@@ -202,9 +251,9 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <td><?= htmlspecialchars($task['completed_at']) ?></td>
                                 <td>
                                     <?php if (!empty($task['file_path'])): ?>
-                                        <a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank">View File</a>
+                                        <a href="#" class="view-modal" data-type="file" data-src="../uploads/<?= htmlspecialchars($task['file_path']) ?>">View File</a>
                                     <?php elseif (!empty($task['drive_link'])): ?>
-                                        <a href="<?= htmlspecialchars($task['drive_link']) ?>" target="_blank">View Drive File</a>
+                                        <a href="#" class="view-modal" data-type="drive" data-src="<?= htmlspecialchars($task['drive_link']) ?>">View Drive File</a>
                                     <?php else: ?>
                                         N/A
                                     <?php endif; ?>
@@ -217,6 +266,14 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <p>No completed tasks found.</p>
             <?php endif; ?>
         </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="fileModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <iframe src="" id="modalIframe"></iframe>
+        </div>
     </div>
 
     <!-- ✅ jQuery & DataTables JS -->
@@ -236,6 +293,32 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 language: {
                     search: "Filter Records:"
                 }
+            });
+
+            // Modal Logic
+            const modal = $('#fileModal');
+            const iframe = $('#modalIframe');
+
+            $('.view-modal').click(function(e) {
+                e.preventDefault();
+                const type = $(this).data('type');
+                let src = $(this).data('src');
+
+                if (type === 'drive') {
+                    // Convert Google Drive link to embed if necessary
+                    if (src.includes("drive.google.com")) {
+                        src = src.replace("/view", "/preview");
+                    }
+                }
+
+                iframe.attr('src', src);
+                modal.show();
+            });
+
+            $('.modal-close, #fileModal').click(function(e) {
+                if (e.target !== this) return; // only close if click outside iframe or on X
+                iframe.attr('src', '');
+                modal.hide();
             });
         });
     </script>

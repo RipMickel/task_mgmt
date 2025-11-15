@@ -1,17 +1,8 @@
 <?php
 session_start();
-require_once "inc/config.php";
-
-// PHPMailer
-require_once "PHPMailer/src/PHPMailer.php";
-require_once "PHPMailer/src/SMTP.php";
-require_once "PHPMailer/src/Exception.php";
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+require_once "inc/config.php"; // Adjusted path for root
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
     $email = $_POST['email'];
     $password = $_POST['password'];
 
@@ -21,54 +12,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($user && password_verify($password, $user['password'])) {
 
-        // Check pending instructor
+        // ✅ Only instructors require activation
         if ($user['role'] === 'instructor' && $user['status'] !== 'active') {
             $error = "Your account is still pending approval by a coordinator.";
         } else {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['name'] = $user['name'];
+            $_SESSION['profile_image'] = !empty($user['profile_image']) ? $user['profile_image'] : null;
 
-            // 🔐 Generate 2FA OTP
-            $otp = rand(100000, 999999);
+            // 🔥 Insert login log into user_logs
+            $logStmt = $pdo->prepare("INSERT INTO user_logs (user_id, action) VALUES (?, ?)");
+            $logStmt->execute([$user['id'], 'User logged in']);
 
-            // Store OTP in DB
-            $otpStmt = $pdo->prepare("UPDATE users SET otp_code=? WHERE id=?");
-            $otpStmt->execute([$otp, $user['id']]);
-
-            // Store temporary session
-            $_SESSION['temp_user_id'] = $user['id'];
-
-            // 🔥 Send OTP using Gmail SMTP
-            $mail = new PHPMailer(true);
-
-            try {
-                $mail->isSMTP();
-                $mail->Host = "smtp.gmail.com";
-                $mail->SMTPAuth = true;
-
-                // TODO: change these ↓↓↓
-                $mail->Username = "gaudicosmickelangelo@gmail.com";  // Gmail
-                $mail->Password = "zpdc qvzx oahp eprr";    // App password
-
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                $mail->Port = 587;
-
-                $mail->setFrom("yourgmail@gmail.com", "NBSC Login Verification");
-                $mail->addAddress($email);
-
-                $mail->isHTML(true);
-                $mail->Subject = "Your ICS CID TM Login Verification Code";
-                $mail->Body = "
-                    <h3>Your Verification Code:</h3>
-                    <h1 style='letter-spacing:4px;'>$otp</h1>
-                    <p>Enter this code to complete your login.</p>
-                ";
-
-                $mail->send();
-            } catch (Exception $e) {
-                $error = "Failed to send OTP email: " . $mail->ErrorInfo;
+            // Role-based redirection
+            switch ($user['role']) {
+                case 'admin':
+                    header("Location: admin/dashboard.php");
+                    break;
+                case 'coordinator':
+                    header("Location: coordinator/dashboard.php");
+                    break;
+                case 'instructor':
+                    header("Location: instructor/dashboard.php");
+                    break;
+                default:
+                    $error = "Unknown role.";
             }
-
-            // Redirect to OTP page
-            header("Location: verify.php");
             exit;
         }
     } else {
@@ -76,6 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+
+
 
 <!DOCTYPE html>
 <html>
@@ -86,7 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body>
-
     <div class="container">
         <h2>Login</h2>
 
@@ -99,12 +70,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Password: <input type="password" name="password" required><br>
             <button type="submit">Login</button>
         </form>
+
     </div>
 
     <script src="assets/js/main.js"></script>
 
     <script>
         window.addEventListener('DOMContentLoaded', () => {
+            // Parse URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const message = urlParams.get('message');
 
@@ -120,11 +93,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         alert('Registration successful! Please login.');
                         break;
                 }
+
+                // Remove the query string so it doesn't alert again on refresh
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         });
     </script>
-
 </body>
 
 </html>

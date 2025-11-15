@@ -21,17 +21,20 @@ $stmt = $pdo->prepare("
         CASE WHEN t.status = 'pending' THEN 0 ELSE 1 END,
         t.deadline DESC
 ");
-
 $stmt->execute([$_SESSION['user_id']]);
 $tasks = $stmt->fetchAll();
 
-// Handle marking task as completed with file upload OR Google Drive link
+// Count stats
+$totalTasks = count($tasks);
+$pendingTasks = count(array_filter($tasks, fn($t) => $t['status'] === 'pending'));
+$completedTasks = count(array_filter($tasks, fn($t) => $t['status'] === 'completed'));
+
+// Handle marking task as completed
 if (isset($_POST['complete_task'])) {
     $task_id   = $_POST['task_id'];
     $file_path = null;
     $drive_link = null;
 
-    // If file upload provided
     if (isset($_FILES['task_file']) && $_FILES['task_file']['error'] === UPLOAD_ERR_OK) {
         $fileTmpPath = $_FILES['task_file']['tmp_name'];
         $fileName    = $_FILES['task_file']['name'];
@@ -49,7 +52,6 @@ if (isset($_POST['complete_task'])) {
         }
     }
 
-    // If Google Drive link provided (optional submission)
     if (isset($_POST['drive_link']) && !empty(trim($_POST['drive_link']))) {
         $link = trim($_POST['drive_link']);
         if (filter_var($link, FILTER_VALIDATE_URL) && (strpos($link, 'drive.google.com') !== false)) {
@@ -59,7 +61,6 @@ if (isset($_POST['complete_task'])) {
         }
     }
 
-    // If neither file nor link given
     if ($file_path === null && $drive_link === null) {
         $error = "No file uploaded or Drive link provided.";
     }
@@ -73,7 +74,7 @@ if (isset($_POST['complete_task'])) {
     }
 }
 
-// Check for upcoming deadlines (within 2 days)
+// Check upcoming deadlines
 $upcomingTasks = [];
 $currentDate = new DateTime();
 foreach ($tasks as $task) {
@@ -93,132 +94,217 @@ foreach ($tasks as $task) {
 <head>
     <meta charset="UTF-8">
     <title>Instructor Dashboard</title>
-    <!-- DataTables + jQuery -->
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
-    <link rel="stylesheet" href="../instructor/instructor.css">
     <style>
         body {
-            font-family: Arial, sans‑serif;
             margin: 0;
-            background: #f4f6f9;
+            font-family: 'Inter', sans-serif;
+            background: #eef1f5;
         }
 
         .dashboard-container {
             display: flex;
-            min-height: 100vh;
+            height: 100vh;
         }
 
         .sidebar {
-            background: #1a1a2e;
+            width: 260px;
+            background: #0c1b33;
             color: white;
-            padding: 20px;
-            width: 220px;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar h2 {
             text-align: center;
-            margin-bottom: 20px;
+            font-weight: 700;
+            margin-bottom: 30px;
         }
 
         .sidebar ul {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
 
-        .sidebar ul li {
-            margin: 15px 0;
-        }
-
-        .sidebar ul li a {
-            color: white;
+        .sidebar a {
+            display: block;
+            padding: 12px 15px;
             text-decoration: none;
+            color: #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            transition: 0.25s;
         }
 
-        .sidebar ul li.active a {
-            font-weight: bold;
-            color: #ffd700;
+        .sidebar a:hover,
+        .sidebar .active a {
+            background: #1e2a47;
+            color: #fff;
         }
 
         .main-content {
             flex: 1;
-            padding: 20px;
-            background: white;
+            padding: 20px 30px;
+            overflow-y: auto;
         }
 
-        .welcome-container {
+        .page-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
             margin-bottom: 20px;
         }
 
-        .welcome-container img {
+        .page-header img {
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            object‑fit: cover;
+            object-fit: cover;
         }
 
-        table.dataTable {
-            width: 100% !important;
-            border‑collapse: collapse;
+        .stats-cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h3 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 22px;
+        }
+
+        .card p {
+            margin: 5px 0 0;
+            color: gray;
+        }
+
+        table {
+            background: white;
+            border-radius: 10px !important;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: white;
+        }
+
+        .pending {
+            background: #f0ad4e;
+        }
+
+        .completed {
+            background: #5cb85c;
         }
 
         .btn {
-            background-color: #007bff;
-            border: none;
+            padding: 7px 12px;
+            background: #007bff;
             color: white;
-            padding: 6px 10px;
+            border: none;
             border-radius: 6px;
             cursor: pointer;
+            transition: 0.25s;
         }
 
         .btn:hover {
-            background-color: #0056b3;
+            background: #0056b3;
+        }
+
+        .upload-box {
+            background: #f8f9fc;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 5px;
         }
 
         .alert-error {
-            background-color: #f8d7da;
-            padding: 10px;
+            background-color: #ffdddd;
+            padding: 12px;
+            border-left: 5px solid red;
+            margin-bottom: 20px;
             border-radius: 6px;
-            margin-bottom: 10px;
-            color: #721c24;
         }
 
-        @media (max-width: 768px) {
-            .dashboard-container {
-                flex-direction: column;
-            }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 99999;
+            padding-top: 100px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+        }
 
-            .sidebar {
-                width: 100%;
-                text-align: center;
-            }
+        .modal-content {
+            background: white;
+            margin: auto;
+            padding: 20px;
+            width: 500px;
+            border-radius: 10px;
+            animation: fadeIn .2s ease-in-out;
+            position: relative;
+        }
 
-            .main-content {
-                padding: 10px;
-            }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
         }
     </style>
 </head>
 
 <body>
+
     <div class="dashboard-container">
+
         <aside class="sidebar">
-            <h2>Instructor Panel</h2>
+            <h2>Instructor</h2>
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">My Completed Tasks</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'logout.php' ? 'active' : '' ?>"><a href="../auth/logout.php">Logout</a></li>
+                <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
 
         <main class="main-content">
-            <div class="welcome-container">
+
+            <div class="page-header">
                 <?php
                 $profilePic = !empty($_SESSION['profile_image'])
                     ? "../uploads/profiles/" . $_SESSION['profile_image']
@@ -228,88 +314,136 @@ foreach ($tasks as $task) {
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
             </div>
 
+            <div class="stats-cards">
+                <div class="card">
+                    <h3><?= $totalTasks ?></h3>
+                    <p>Total Tasks</p>
+                </div>
+                <div class="card">
+                    <h3><?= $pendingTasks ?></h3>
+                    <p>Pending</p>
+                </div>
+                <div class="card">
+                    <h3><?= $completedTasks ?></h3>
+                    <p>Completed</p>
+                </div>
+            </div>
+
             <?php if (isset($error)): ?>
                 <div class="alert-error"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
 
-            <section class="tasks" id="my‑tasks">
+            <section class="tasks">
                 <h2>Your Tasks</h2>
-                <?php if (count($tasks) > 0): ?>
-                    <table id="tasksTable" class="display">
-                        <thead>
+
+                <table id="tasksTable" class="display">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Coordinator</th>
+                            <th>Deadline</th>
+                            <th>Academic Year</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <?php foreach ($tasks as $task): ?>
                             <tr>
-                                <th>Title</th>
-                                <th>Description</th>
-                                <th>Coordinator</th>
-                                <th>Deadline</th>
-                                <th>Academic Year</th>
-                                <th>Status</th>
-                                <th>Action</th>
+                                <td><?= htmlspecialchars($task['title']) ?></td>
+                                <td><?= htmlspecialchars($task['description']) ?></td>
+                                <td><?= htmlspecialchars($task['coordinator_name']) ?></td>
+                                <td><?= htmlspecialchars($task['deadline']) ?></td>
+                                <td><?= htmlspecialchars($task['academic_year']) ?></td>
+                                <td>
+                                    <span class="status-badge <?= strtolower($task['status']) ?>"><?= htmlspecialchars($task['status']) ?></span>
+                                </td>
+
+                                <td>
+                                    <button class="btn openModal" data-task='<?= json_encode($task) ?>'>
+                                        View / Submit
+                                    </button>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($tasks as $task): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($task['title']) ?></td>
-                                    <td><?= htmlspecialchars($task['description']) ?></td>
-                                    <td><?= htmlspecialchars($task['coordinator_name']) ?></td>
-                                    <td><?= htmlspecialchars($task['deadline']) ?></td>
-                                    <td><?= htmlspecialchars($task['academic_year']) ?></td>
-                                    <td><?= htmlspecialchars($task['status']) ?></td>
-                                    <td>
-                                        <?php if ($task['status'] === 'pending'): ?>
-                                            <form id="form_task_<?= $task['id'] ?>" action="" method="post" enctype="multipart/form-data">
-                                                <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
-                                                <input type="file" name="task_file">
-                                                <div class="drive‑link‑input">
-                                                    <label for="drive_link_<?= $task['id'] ?>">Or submit Google Drive link:</label><br>
-                                                    <input type="url" name="drive_link" id="drive_link_<?= $task['id'] ?>" placeholder="https://drive.google.com/…">
-                                                </div>
-                                                <button type="submit" name="complete_task" class="btn">Mark as Completed</button>
-                                            </form>
-                                        <?php else: ?>
-                                            Completed
-                                            <?php if (!empty($task['file_path'])): ?>
-                                                <br><a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank">View File</a>
-                                            <?php endif; ?>
-                                            <?php if (!empty($task['drive_link'])): ?>
-                                                <br><a href="<?= htmlspecialchars($task['drive_link']) ?>" target="_blank">View Drive Link</a>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php else: ?>
-                    <p>No tasks assigned yet.</p>
-                <?php endif; ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </section>
 
         </main>
     </div>
 
+    <!-- Modal HTML -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <p id="modalDescription"></p>
+            <p><strong>Coordinator:</strong> <span id="modalCoordinator"></span></p>
+            <p><strong>Deadline:</strong> <span id="modalDeadline"></span></p>
+            <p><strong>Status:</strong> <span id="modalStatus"></span></p>
+            <p><strong>Academic Year:</strong> <span id="modalYear"></span></p>
+            <div id="modalSubmitSection"></div>
+        </div>
+    </div>
+
     <script>
         $(document).ready(function() {
             $('#tasksTable').DataTable({
-                "order": [
-                    [2, "asc"],
-                    [5, "desc"]
-                ],
                 "pageLength": 10,
-                "columnDefs": [{
-                    "orderable": false,
-                    "targets": 6
-                }]
+                "order": [
+                    [3, "asc"]
+                ]
             });
-        });
 
-        <?php if (!empty($upcomingTasks)): ?>
-            let tasks = <?php echo json_encode($upcomingTasks); ?>;
-            let message = "⚠️ Upcoming Deadlines:\n\n" + tasks.join("\n");
-            alert(message);
-        <?php endif; ?>
+            <?php if (!empty($upcomingTasks)): ?>
+                let tasks = <?= json_encode($upcomingTasks); ?>;
+                alert("⚠️ Upcoming Deadlines:\n\n" + tasks.join("\n"));
+            <?php endif; ?>
+
+            // Modal open
+            $(document).on("click", ".openModal", function() {
+                let task = $(this).data("task");
+
+                $("#modalTitle").text(task.title);
+                $("#modalDescription").text(task.description);
+                $("#modalCoordinator").text(task.coordinator_name);
+                $("#modalDeadline").text(task.deadline);
+                $("#modalStatus").text(task.status);
+                $("#modalYear").text(task.academic_year);
+
+                let submitHTML = "";
+                if (task.status === "pending") {
+                    submitHTML = `
+                        <form method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="task_id" value="${task.id}">
+                            <div class="upload-box"><strong>Upload File:</strong><input type="file" name="task_file"></div>
+                            <div class="upload-box"><strong>Or Google Drive Link:</strong><input type="url" name="drive_link" placeholder="https://drive.google.com/..."></div>
+                            <button type="submit" name="complete_task" class="btn">Submit</button>
+                        </form>
+                    `;
+                } else {
+                    submitHTML = `<p><strong>Completed Task:</strong></p>`;
+                    if (task.file_path) submitHTML += `<a href="../uploads/${task.file_path}" target="_blank">View File</a><br>`;
+                    if (task.drive_link) submitHTML += `<a href="${task.drive_link}" target="_blank">View Drive Link</a>`;
+                }
+
+                $("#modalSubmitSection").html(submitHTML);
+                $("#taskModal").fadeIn();
+            });
+
+            // Modal close
+            $(".close").click(function() {
+                $("#taskModal").fadeOut();
+            });
+            window.onclick = function(event) {
+                if (event.target == document.getElementById("taskModal")) $("#taskModal").fadeOut();
+            };
+        });
     </script>
+
 </body>
 
 </html>

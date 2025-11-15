@@ -79,37 +79,42 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
         }
 
         .sidebar {
-            background: #1a1a2e;
+            width: 260px;
+            background: #0c1b33;
             color: white;
-            padding: 20px;
-            width: 220px;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar h2 {
             text-align: center;
-            margin-bottom: 20px;
-            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 30px;
         }
 
         .sidebar ul {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
 
-        .sidebar ul li {
-            margin: 12px 0;
-        }
-
-        .sidebar ul li a {
-            color: white;
+        .sidebar a {
+            display: block;
+            padding: 12px 15px;
             text-decoration: none;
-            font-size: 1em;
+            color: #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            transition: 0.25s;
         }
 
-        .sidebar ul li.active a {
-            font-weight: bold;
-            color: #ffd700;
+        .sidebar a:hover,
+        .sidebar .active a {
+            background: #1e2a47;
+            color: #fff;
         }
+
 
         .main-content {
             flex: 1;
