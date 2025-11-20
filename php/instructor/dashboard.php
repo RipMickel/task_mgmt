@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once "../inc/config.php";
+require_once "../inc/config.php"; // Make sure $pdo is your PDO connection
 require_once "../inc/functions.php";
 redirect_if_not_logged_in();
 
@@ -9,30 +9,41 @@ if (!check_role('instructor')) {
     exit;
 }
 
+$instructor_id = $_SESSION['user_id'];
+
 // Fetch tasks assigned to this instructor
-$stmt = $pdo->prepare("
+$tasks = [];
+$sql = "
     SELECT t.*, u.name as coordinator_name,
            th.file_path, th.drive_link
     FROM tasks t
     JOIN users u ON t.assigned_by = u.id
     LEFT JOIN task_history th ON th.task_id = t.id
-    WHERE t.assigned_to = ?
+    WHERE t.assigned_to = :instructor_id
     ORDER BY 
         CASE WHEN t.status = 'pending' THEN 0 ELSE 1 END,
         t.deadline DESC
-");
-$stmt->execute([$_SESSION['user_id']]);
-$tasks = $stmt->fetchAll();
+";
 
-// Count stats
-$totalTasks = count($tasks);
-$pendingTasks = count(array_filter($tasks, fn($t) => $t['status'] === 'pending'));
+$stmt = $pdo->prepare($sql);
+$stmt->execute(['instructor_id' => $instructor_id]);
+$tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Count stats for tasks
+$totalTasks     = count($tasks);
+$pendingTasks   = count(array_filter($tasks, fn($t) => $t['status'] === 'pending'));
 $completedTasks = count(array_filter($tasks, fn($t) => $t['status'] === 'completed'));
+
+// Fetch count of assigned subjects
+$sqlSubjects = "SELECT COUNT(*) as total FROM subject_assignments WHERE instructor_id = :instructor_id";
+$stmtSubjects = $pdo->prepare($sqlSubjects);
+$stmtSubjects->execute(['instructor_id' => $instructor_id]);
+$assignedSubjectsCount = $stmtSubjects->fetchColumn() ?: 0;
 
 // Handle marking task as completed
 if (isset($_POST['complete_task'])) {
-    $task_id   = $_POST['task_id'];
-    $file_path = null;
+    $task_id    = $_POST['task_id'];
+    $file_path  = null;
     $drive_link = null;
 
     if (isset($_FILES['task_file']) && $_FILES['task_file']['error'] === UPLOAD_ERR_OK) {
@@ -66,9 +77,18 @@ if (isset($_POST['complete_task'])) {
     }
 
     if (!isset($error)) {
-        $pdo->prepare("UPDATE tasks SET status='completed' WHERE id=?")->execute([$task_id]);
-        $pdo->prepare("INSERT INTO task_history (task_id, completed_at, file_path, drive_link) VALUES (?, NOW(), ?, ?)")
-            ->execute([$task_id, $file_path, $drive_link]);
+        // Update task status
+        $stmtUpdate = $pdo->prepare("UPDATE tasks SET status='completed' WHERE id=:task_id");
+        $stmtUpdate->execute(['task_id' => $task_id]);
+
+        // Insert into task history
+        $stmtHistory = $pdo->prepare("INSERT INTO task_history (task_id, completed_at, file_path, drive_link) VALUES (:task_id, NOW(), :file_path, :drive_link)");
+        $stmtHistory->execute([
+            'task_id'   => $task_id,
+            'file_path' => $file_path,
+            'drive_link' => $drive_link
+        ]);
+
         header("Location: dashboard.php");
         exit();
     }
@@ -94,16 +114,12 @@ foreach ($tasks as $task) {
 <head>
     <meta charset="UTF-8">
     <title>Instructor Dashboard</title>
-
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-    <!-- DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
     <style>
+        /* Keep your existing CSS intact */
         body {
             margin: 0;
             font-family: 'Inter', sans-serif;
@@ -255,7 +271,6 @@ foreach ($tasks as $task) {
             border-radius: 6px;
         }
 
-        /* Modal styles */
         .modal {
             display: none;
             position: fixed;
@@ -289,34 +304,26 @@ foreach ($tasks as $task) {
 </head>
 
 <body>
-
     <div class="dashboard-container">
-
         <aside class="sidebar">
             <h2>Instructor</h2>
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">My Completed Tasks</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assigned_subjects.php' ? 'active' : '' ?>"><a href="assigned_subjects.php">Assigned Subjects</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'instructor_chat_list.php' ? 'active' : '' ?>"><a href="instructor_chat_list.php">Feedback</a></li>
-
-
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'feedback.php' ? 'active' : '' ?>"><a href="feedback.php">Feedback</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
-
         <main class="main-content">
-
             <div class="page-header">
                 <?php
-                $profilePic = !empty($_SESSION['profile_image'])
-                    ? "../uploads/profiles/" . $_SESSION['profile_image']
-                    : "../assets/images/default.png";
+                $profilePic = !empty($_SESSION['profile_image']) ? "../uploads/profiles/" . $_SESSION['profile_image'] : "../assets/images/default.png";
                 ?>
                 <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile">
                 <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?></h1>
             </div>
-
             <div class="stats-cards">
                 <div class="card">
                     <h3><?= $totalTasks ?></h3>
@@ -330,15 +337,14 @@ foreach ($tasks as $task) {
                     <h3><?= $completedTasks ?></h3>
                     <p>Completed</p>
                 </div>
+                <div class="card">
+                    <h3><?= $assignedSubjectsCount ?></h3>
+                    <p>Assigned Subjects</p>
+                </div>
             </div>
-
-            <?php if (isset($error)): ?>
-                <div class="alert-error"><?= htmlspecialchars($error) ?></div>
-            <?php endif; ?>
-
+            <?php if (isset($error)): ?><div class="alert-error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
             <section class="tasks">
                 <h2>Your Tasks</h2>
-
                 <table id="tasksTable" class="display">
                     <thead>
                         <tr>
@@ -351,7 +357,6 @@ foreach ($tasks as $task) {
                             <th>Action</th>
                         </tr>
                     </thead>
-
                     <tbody>
                         <?php foreach ($tasks as $task): ?>
                             <tr>
@@ -360,25 +365,18 @@ foreach ($tasks as $task) {
                                 <td><?= htmlspecialchars($task['coordinator_name']) ?></td>
                                 <td><?= htmlspecialchars($task['deadline']) ?></td>
                                 <td><?= htmlspecialchars($task['academic_year']) ?></td>
+                                <td><span class="status-badge <?= strtolower($task['status']) ?>"><?= htmlspecialchars($task['status']) ?></span></td>
                                 <td>
-                                    <span class="status-badge <?= strtolower($task['status']) ?>"><?= htmlspecialchars($task['status']) ?></span>
-                                </td>
-
-                                <td>
-                                    <button class="btn openModal" data-task='<?= json_encode($task) ?>'>
-                                        View / Submit
-                                    </button>
+                                    <button class="btn openModal" data-task='<?= json_encode($task) ?>'>View / Submit</button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </section>
-
         </main>
     </div>
 
-    <!-- Modal HTML -->
     <div id="taskModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -400,16 +398,13 @@ foreach ($tasks as $task) {
                     [3, "asc"]
                 ]
             });
-
             <?php if (!empty($upcomingTasks)): ?>
                 let tasks = <?= json_encode($upcomingTasks); ?>;
                 alert("⚠️ Upcoming Deadlines:\n\n" + tasks.join("\n"));
             <?php endif; ?>
 
-            // Modal open
             $(document).on("click", ".openModal", function() {
                 let task = $(this).data("task");
-
                 $("#modalTitle").text(task.title);
                 $("#modalDescription").text(task.description);
                 $("#modalCoordinator").text(task.coordinator_name);
@@ -419,34 +414,29 @@ foreach ($tasks as $task) {
 
                 let submitHTML = "";
                 if (task.status === "pending") {
-                    submitHTML = `
-                        <form method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="task_id" value="${task.id}">
-                            <div class="upload-box"><strong>Upload File:</strong><input type="file" name="task_file"></div>
-                            <div class="upload-box"><strong>Or Google Drive Link:</strong><input type="url" name="drive_link" placeholder="https://drive.google.com/..."></div>
-                            <button type="submit" name="complete_task" class="btn">Submit</button>
-                        </form>
-                    `;
+                    submitHTML = `<form method="post" enctype="multipart/form-data">
+                <input type="hidden" name="task_id" value="${task.id}">
+                <div class="upload-box"><strong>Upload File:</strong><input type="file" name="task_file"></div>
+                <div class="upload-box"><strong>Or Google Drive Link:</strong><input type="url" name="drive_link" placeholder="https://drive.google.com/..."></div>
+                <button type="submit" name="complete_task" class="btn">Submit</button>
+            </form>`;
                 } else {
                     submitHTML = `<p><strong>Completed Task:</strong></p>`;
                     if (task.file_path) submitHTML += `<a href="../uploads/${task.file_path}" target="_blank">View File</a><br>`;
                     if (task.drive_link) submitHTML += `<a href="${task.drive_link}" target="_blank">View Drive Link</a>`;
                 }
-
                 $("#modalSubmitSection").html(submitHTML);
                 $("#taskModal").fadeIn();
             });
 
-            // Modal close
             $(".close").click(function() {
                 $("#taskModal").fadeOut();
             });
             window.onclick = function(event) {
                 if (event.target == document.getElementById("taskModal")) $("#taskModal").fadeOut();
-            };
+            }
         });
     </script>
-
 </body>
 
 </html>
