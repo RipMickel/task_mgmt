@@ -312,7 +312,8 @@ foreach ($tasks as $task) {
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">My Completed Tasks</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'assigned_subjects.php' ? 'active' : '' ?>"><a href="assigned_subjects.php">Assigned Subjects</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'feedback.php' ? 'active' : '' ?>"><a href="feedback.php">Feedback</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'instructor_chat_list.php
+                .php' ? 'active' : '' ?>"><a href="instructor_chat_list.php">Feedback</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>

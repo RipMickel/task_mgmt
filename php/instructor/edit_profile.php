@@ -206,7 +206,8 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
                 <li><a href="task_history.php">My Completed Tasks</a></li>
-                <li class="active"><a href="edit_profile.php">Edit Profile</a></li>
+                <li class="active"><a href="edit_profile.php">Edit Profile</a></li>           
+                     <li><a href="assigned_subjects">Assigned Subjects</a></li>
                 <li><a href="instructor_chat_list.php">Feedback</a></li>
 
                 <li><a href="../auth/logout.php">Logout</a></li>
