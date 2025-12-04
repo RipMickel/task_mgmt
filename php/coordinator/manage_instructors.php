@@ -1,37 +1,89 @@
 <?php
 session_start();
 require_once "../inc/config.php";
+require_once "../inc/functions.php";
+require_once "send_email.php";
 
-// Restrict to coordinators only
+// Restrict access to coordinators only
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'coordinator') {
     echo "Access Denied";
     exit;
 }
 
-// Handle actions
+// Handle actions (approve / activate / deactivate / delete)
 if (isset($_GET['action']) && isset($_GET['id'])) {
-    $id = intval($_GET['id']);
+    $id     = intval($_GET['id']);
     $action = $_GET['action'];
+    $newStatus = null;
 
-    if ($action === 'approve') {
+    if ($action === 'approve' || $action === 'activate') {
         $stmt = $pdo->prepare("UPDATE users SET status='active' WHERE id=? AND role='instructor'");
         $stmt->execute([$id]);
+        $newStatus = 'Active';
     } elseif ($action === 'deactivate') {
         $stmt = $pdo->prepare("UPDATE users SET status='inactive' WHERE id=? AND role='instructor'");
         $stmt->execute([$id]);
-    } elseif ($action === 'activate') {
-        $stmt = $pdo->prepare("UPDATE users SET status='active' WHERE id=? AND role='instructor'");
-        $stmt->execute([$id]);
+        $newStatus = 'Inactive';
     } elseif ($action === 'delete') {
         $stmt = $pdo->prepare("DELETE FROM users WHERE id=? AND role='instructor'");
         $stmt->execute([$id]);
+        $newStatus = null;
     }
 
+    // If status changed (approve / activate / deactivate), send email notification
+    if ($newStatus !== null) {
+        // Fetch user email + name
+        $u = $pdo->prepare("SELECT email, name FROM users WHERE id = ?");
+        $u->execute([$id]);
+        $user = $u->fetch(PDO::FETCH_ASSOC);
+
+        if ($user && !empty($user['email'])) {
+            $to      = $user['email'];
+            $subject = "Account Status Changed";
+
+            $message = "
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Account Status Notification</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #333; margin:0; padding:0; background-color: #f4f7fc; }
+    .email-container { width:100%; max-width:600px; margin:0 auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+    h1 { color:#2e6c8b; font-size:24px; margin-bottom:10px; }
+    p { font-size:14px; line-height:1.6; }
+    .footer { font-size:12px; color:#888; text-align:center; margin-top:30px; }
+  </style>
+</head>
+<body>
+  <div class='email-container'>
+    <h1>Hello " . htmlspecialchars($user['name']) . ",</h1>
+    <p>Your account status has been changed by the coordinator/admin.</p>
+    <p><strong>New Status:</strong> $newStatus</p>
+    <p>If you have any questions or concerns, please contact the administrator.</p>
+    <div class='footer'>
+      <p>This is an automated message — please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+";
+
+            // send notification
+            $sent = sendEmailNotification($to, $subject, $message);
+            if (!$sent) {
+                error_log("Failed to send account status email to $to");
+            }
+        }
+    }
+
+    // redirect to avoid resubmit on refresh
     header("Location: manage_instructors.php");
     exit;
 }
 
-// Fetch instructors
+// Fetch instructor list
 $stmt = $pdo->query("SELECT * FROM users WHERE role='instructor' ORDER BY created_at DESC");
 $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -46,120 +98,57 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background: #f4f6f9;
+            background: #eef1f5;
         }
 
         .dashboard-container {
             display: flex;
-            min-height: 100vh;
+            height: 100vh;
         }
 
-        /* Sidebar */
         .sidebar {
-            width: 240px;
-            background: #2c3e50;
-            color: #fff;
-            padding: 20px 0;
-            flex-shrink: 0;
+            width: 260px;
+            background: #0c1b33;
+            color: white;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar h2 {
             text-align: center;
+            font-weight: 700;
             margin-bottom: 30px;
-            font-size: 20px;
-            letter-spacing: 1px;
         }
 
         .sidebar ul {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
 
-        .sidebar ul li {
-            margin: 10px 0;
-        }
-
-        .sidebar ul li a {
+        .sidebar a {
             display: block;
-            padding: 12px 20px;
-            color: #ecf0f1;
+            padding: 12px 15px;
             text-decoration: none;
-            transition: background 0.3s;
+            color: #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            transition: background-color 0.25s, color 0.25s;
         }
 
-        .sidebar ul li a:hover,
-        .sidebar ul li.active a {
-            background: #34495e;
-            border-left: 4px solid #1abc9c;
-        }
-
-        /* Main content */
-        .main-content {
-            flex-grow: 1;
-            padding: 30px;
-        }
-
-        .form-container {
-            background: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .form-container h2 {
-            margin-bottom: 20px;
-            color: #2c3e50;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            font-weight: bold;
-        }
-
-        input,
-        textarea,
-        select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-
-        button {
-            background: #1abc9c;
+        .sidebar a:hover,
+        .sidebar .active a {
+            background: #1e2a47;
             color: #fff;
-            padding: 10px 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
         }
 
-        button:hover {
-            background: #16a085;
+        .main-content {
+            flex: 1;
+            padding: 20px 30px;
+            overflow-y: auto;
         }
 
-        .alert {
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        /* Table Styling */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -180,27 +169,27 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         tr:nth-child(even) {
-            background-color: #ecf0f1;
+            background: #ecf0f1;
         }
 
         tr:nth-child(odd) {
-            background-color: #ffffff;
+            background: #fff;
         }
 
         td a {
             text-decoration: none;
             padding: 5px 10px;
             border-radius: 5px;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-
+        /* Action links styling */
         td a[href*="action=approve"] {
             color: #34495e;
         }
 
         td a[href*="action=approve"]:hover {
-            background-color: #34495e;
+            background: #34495e;
             color: white;
         }
 
@@ -209,54 +198,48 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         td a[href*="action=deactivate"]:hover {
-            background-color: green;
+            background: green;
             color: white;
         }
 
-
         td a[href*="action=activate"] {
-
             color: #1abc9c;
         }
 
         td a[href*="action=activate"]:hover {
-            background-color: #1abc9c;
+            background: #1abc9c;
             color: white;
         }
-
 
         td a[href*="action=delete"] {
             color: red;
         }
 
         td a[href*="action=delete"]:hover {
-            background-color: green;
+            background: green;
             color: white;
         }
     </style>
+
 </head>
 
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <h2>Coordinator Panel</h2>
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
-                <li class="active"><a href="view_task.php">My Task</a></li>
+                <li><a href="view_task.php">My Task</a></li>
                 <li><a href="assign_task.php">Assign Task</a></li>
                 <li><a href="completed_task.php">Completed Task</a></li>
-                <li class="active"><a href="manage_instructors.php">List of Instructors</a></a></li>
+                <li class="active"><a href="manage_instructors.php">List of Instructors</a></li>
                 <li><a href="edit_profile.php">Edit Profile</a></li>
                 <li><a href="chat_list.php">Feedback</a></li>
-
-
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
         <div class="main-content">
             <h2>List of Instructors</h2>
-
             <table border="1" cellpadding="8" cellspacing="0">
                 <tr>
                     <th>Name</th>
@@ -283,6 +266,7 @@ $instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php endforeach; ?>
             </table>
         </div>
+    </div>
 </body>
 
 </html>

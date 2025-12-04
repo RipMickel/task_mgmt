@@ -1,29 +1,79 @@
 <?php
 session_start();
 require_once "../inc/config.php";
-
-// Only allow admin
+// require authentication & admin check
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../index.php");
     exit;
 }
 
+require_once "send_email.php";  // include your email‑helper
+
 // Handle role update
 if (isset($_POST['update_role'])) {
-    $userId = $_POST['user_id'];
+    $userId  = $_POST['user_id'];
     $newRole = $_POST['role'];
 
+    // get old role (optional, if you want to include in email)
+    $stmtOld = $pdo->prepare("SELECT role, email, name FROM users WHERE id = ?");
+    $stmtOld->execute([$userId]);
+    $oldData = $stmtOld->fetch(PDO::FETCH_ASSOC);
+
+    // update role
     $stmt = $pdo->prepare("UPDATE users SET role = ? WHERE id = ?");
     $stmt->execute([$newRole, $userId]);
 
     $message = "User role updated successfully.";
+
+    // send notification email to user
+    if ($oldData) {
+        $to    = $oldData['email'];
+        $name  = $oldData['name'];
+        $subject = "Your account role has been changed";
+
+        $body = "
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Role Changed Notification</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f7fc; color: #333; margin: 0; padding: 0; }
+    .email-container { width: 100%; max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px;
+                      box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2e6c8b; font-size: 24px; margin-bottom: 10px; }
+    p  { font-size: 14px; line-height: 1.6; }
+    .footer { font-size: 12px; color: #888; text-align: center; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <div class='email-container'>
+    <h1>Hello " . htmlspecialchars($name) . ",</h1>
+    <p>Your account role has been changed.</p>
+    <p><strong>Old Role:</strong> " . htmlspecialchars($oldData['role']) . "</p>
+    <p><strong>New Role:</strong> " . htmlspecialchars($newRole) . "</p>
+    <p>If you have any questions, please contact the administrator.</p>
+    <div class='footer'>
+      <p>This is an automated message — please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+";
+
+        // send email (using your send_email function)
+        $sent = sendEmailNotification($to, $subject, $body);
+        if (!$sent) {
+            error_log("Failed to send role‑change email to $to");
+        }
+    }
 }
 
 // Fetch all users
 $stmt = $pdo->query("SELECT id, name, email, role FROM users ORDER BY id ASC");
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -174,14 +224,15 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li><a href="manage_users.php">Manage Users</a></li>
                 <li class="active"><a href="roles.php">Manage Roles</a></li>
                 <li><a href="user_logs.php">Recent Logins</a></li>
-
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
 
         <div class="main-content">
             <h2>Manage Roles</h2>
-            <?php if (isset($message)) echo "<div class='alert'>$message</div>"; ?>
+            <?php if (isset($message)): ?>
+                <div class="alert"><?= htmlspecialchars($message) ?></div>
+            <?php endif; ?>
 
             <div class="table-container">
                 <table>
@@ -191,26 +242,27 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <th>Name</th>
                             <th>Email</th>
                             <th>Role</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($users as $user): ?>
+                        <?php foreach ($users as $u): ?>
                             <tr>
-                                <td><?= htmlspecialchars($user['id']) ?></td>
-                                <td><?= htmlspecialchars($user['name']) ?></td>
-                                <td><?= htmlspecialchars($user['email']) ?></td>
+                                <td><?= htmlspecialchars($u['id']) ?></td>
+                                <td><?= htmlspecialchars($u['name']) ?></td>
+                                <td><?= htmlspecialchars($u['email']) ?></td>
+                                <td><?= htmlspecialchars($u['role']) ?></td>
                                 <td>
                                     <form method="post" style="display:flex; gap:5px; flex-wrap:wrap;">
-                                        <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                                        <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                         <select name="role">
-                                            <option value="instructor" <?= $user['role'] == 'instructor' ? 'selected' : '' ?>>Instructor</option>
-                                            <option value="coordinator" <?= $user['role'] == 'coordinator' ? 'selected' : '' ?>>Coordinator</option>
-                                            <option value="admin" <?= $user['role'] == 'admin' ? 'selected' : '' ?>>Admin</option>
+                                            <option value="instructor" <?= $u['role'] === 'instructor' ? 'selected' : '' ?>>Instructor</option>
+                                            <option value="coordinator" <?= $u['role'] === 'coordinator' ? 'selected' : '' ?>>Coordinator</option>
+                                            <option value="admin" <?= $u['role'] === 'admin' ? 'selected' : '' ?>>Admin</option>
                                         </select>
                                         <button type="submit" name="update_role">Update</button>
                                     </form>
                                 </td>
-                                <td></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

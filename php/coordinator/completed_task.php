@@ -74,57 +74,55 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background: #f4f6f9;
+            background: #eef1f5;
         }
 
         .dashboard-container {
             display: flex;
-            min-height: 100vh;
+            height: 100vh;
         }
 
-        /* Sidebar */
         .sidebar {
-            width: 220px;
-            background: #2c3e50;
-            color: #fff;
-            padding: 20px 0;
-            flex-shrink: 0;
+            width: 260px;
+            background: #0c1b33;
+            color: white;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar h2 {
             text-align: center;
+            font-weight: 700;
             margin-bottom: 30px;
-            font-size: 20px;
-            letter-spacing: 1px;
         }
 
         .sidebar ul {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
 
-        .sidebar ul li {
-            margin: 10px 0;
-        }
-
-        .sidebar ul li a {
+        .sidebar a {
             display: block;
-            padding: 12px 20px;
-            color: #ecf0f1;
+            padding: 12px 15px;
             text-decoration: none;
-            transition: background 0.3s;
+            color: #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            transition: 0.25s;
         }
 
-        .sidebar ul li a:hover,
-        .sidebar ul li.active a {
-            background: #34495e;
-            border-left: 4px solid #1abc9c;
+        .sidebar a:hover,
+        .sidebar .active a {
+            background: #1e2a47;
+            color: #fff;
         }
 
-        /* Main content */
         .main-content {
-            flex-grow: 1;
-            padding: 30px;
+            flex: 1;
+            padding: 20px 30px;
+            overflow-y: auto;
         }
 
         .table-container {
@@ -203,7 +201,7 @@ $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2>Coordinator Panel</h2>
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
-                <li class="active"><a href="view_task.php">My Task</a></li>
+                <li><a href="view_task.php">My Task</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_task.php' ? 'active' : '' ?>"><a href="assign_task.php">Assign Task</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'completed_task.php' ? 'active' : '' ?>"><a href="completed_task.php">Completed Task</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'manage_instructors.php' ? 'active' : '' ?>"><a href="manage_instructors.php">List of Instructors</a></li>
