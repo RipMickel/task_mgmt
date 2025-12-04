@@ -230,6 +230,7 @@ $users = $user_stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2>Coordinator / Admin Panel</h2>
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
+                <li class="active"><a href="view_task.php">My Task</a></li>
                 <li class="active"><a href="assign_task.php">Assign Task</a></li>
                 <li><a href="view_tasks.php">View Assigned Tasks</a></li>
                 <li><a href="edit_profile.php">Edit Profile</a></li>
