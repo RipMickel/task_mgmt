@@ -17,8 +17,6 @@ $stmt = $pdo->prepare("SELECT l.*, u.name, u.role
                        ORDER BY l.created_at DESC");
 $stmt->execute();
 $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,8 +24,21 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <title>Recent Logins - Admin</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <!-- Buttons extension -->
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+
     <style>
         body {
             margin: 0;
@@ -80,7 +91,6 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding-left: 15px;
         }
 
-
         /* Main content */
         .main-content {
             flex-grow: 1;
@@ -92,39 +102,16 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-bottom: 20px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        table th,
-        table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-
-        table th {
+        /* DataTables styling */
+        table.dataTable thead th {
             background: #1abc9c;
             color: white;
         }
 
-        tr:hover {
-            background: #f9f9f9;
-        }
-
-        .chart-container {
-            margin-top: 40px;
+        table.dataTable {
             background: white;
-            padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
+            overflow: hidden;
         }
     </style>
 </head>
@@ -137,12 +124,12 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
                 <li><a href="view_task.php">My Task</a></li>
-
                 <li><a href="completed_task.php">Completed Task</a></li>
                 <li><a href="manage_users.php">Manage Users</a></li>
                 <li><a href="roles.php">Manage Roles</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'user_logs.php' ? 'active' : '' ?>">
                     <a href="user_logs.php">Recent Logins</a>
+                </li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
@@ -150,29 +137,52 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- Main content -->
         <main class="main-content">
             <h1>Recent Logins</h1>
+
             <?php if (count($logs) > 0): ?>
-                <table>
-                    <tr>
-                        <th>User</th>
-                        <th>Role</th>
-                        <th>Action</th>
-                        <th>Date & Time</th>
-                    </tr>
-                    <?php foreach ($logs as $log): ?>
+                <table id="logsTable" class="display">
+                    <thead>
                         <tr>
-                            <td><?= htmlspecialchars($log['name']) ?></td>
-                            <td><?= htmlspecialchars($log['role']) ?></td>
-                            <td><?= htmlspecialchars($log['action']) ?></td>
-                            <td><?= htmlspecialchars($log['created_at']) ?></td>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                            <th>Date & Time</th>
                         </tr>
-                    <?php endforeach; ?>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($logs as $log): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($log['name']) ?></td>
+                                <td><?= htmlspecialchars($log['role']) ?></td>
+                                <td><?= htmlspecialchars($log['action']) ?></td>
+                                <td><?= htmlspecialchars($log['created_at']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
                 </table>
             <?php else: ?>
                 <p>No login activity found.</p>
             <?php endif; ?>
+        </main>
+    </div>
 
-
-
+    <script>
+        $(document).ready(function() {
+            $('#logsTable').DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'print',
+                    {
+                        extend: 'pdfHtml5',
+                        text: 'Export PDF',
+                        title: 'Recent Logins'
+                    }
+                ],
+                "order": [
+                    [3, "desc"]
+                ]
+            });
+        });
+    </script>
 </body>
 
 </html>
