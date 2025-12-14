@@ -9,10 +9,8 @@ if (!check_role('admin')) {
     exit;
 }
 
-// Handle academic year search
 $academicYear = isset($_GET['academic_year']) ? trim($_GET['academic_year']) : '';
 
-// Explicitly select needed columns
 $sql = "
     SELECT 
         th.task_id,
@@ -42,10 +40,7 @@ if ($academicYear) {
 
 $taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Analytics Data (This can be adjusted to match the specific analytics you want)
-$taskCount = count($taskHistory);
 $academicYears = array_column($taskHistory, 'academic_year');
-$uniqueYears = array_unique($academicYears);
 $tasksPerYear = array_count_values($academicYears);
 ?>
 <!DOCTYPE html>
@@ -70,7 +65,6 @@ $tasksPerYear = array_count_values($academicYears);
             min-height: 100vh;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 250px;
             background: #2c3e50;
@@ -82,7 +76,7 @@ $tasksPerYear = array_count_values($academicYears);
 
         .sidebar h2 {
             text-align: center;
-            margin: 0 0 20px 0;
+            margin: 0 0 20px;
             font-size: 20px;
             font-weight: bold;
         }
@@ -126,10 +120,6 @@ $tasksPerYear = array_count_values($academicYears);
             overflow-x: auto;
         }
 
-        .search-form {
-            margin-bottom: 15px;
-        }
-
         table.dataTable thead th {
             background: #2c3e50;
             color: white;
@@ -149,10 +139,6 @@ $tasksPerYear = array_count_values($academicYears);
             border-radius: 8px;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
-        }
-
-        .analytics-section h2 {
-            margin-bottom: 15px;
         }
 
         .print-btn {
@@ -180,7 +166,6 @@ $tasksPerYear = array_count_values($academicYears);
                 <li><a href="dashboard.php">Dashboard</a></li>
                 <li><a href="view_task.php">My Task</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'completed_task.php' ? 'active' : '' ?>">
-
                     <a href="completed_task.php">Completed Task</a>
                 </li>
                 <li><a href="manage_users.php">Manage Users</a></li>
@@ -263,17 +248,38 @@ $tasksPerYear = array_count_values($academicYears);
             });
         });
 
-        // Generate the chart with task analytics
+        // Bar chart with unique colors
         var ctx = document.getElementById('taskChart').getContext('2d');
+        var labels = <?= json_encode(array_keys($tasksPerYear)) ?>;
+        var dataValues = <?= json_encode(array_values($tasksPerYear)) ?>;
+
+        // Generate a simple color palette
+        var colors = [
+            'rgba(26, 188, 156, 0.7)',
+            'rgba(52, 152, 219, 0.7)',
+            'rgba(231, 76, 60, 0.7)',
+            'rgba(155, 89, 182, 0.7)',
+            'rgba(241, 196, 15, 0.7)',
+            'rgba(230, 126, 34, 0.7)',
+            'rgba(46, 204, 113, 0.7)',
+            'rgba(52, 73, 94, 0.7)'
+        ];
+
+        // If more labels than colors, repeat colors (optional)
+        var finalColors = [];
+        for (var i = 0; i < dataValues.length; i++) {
+            finalColors.push(colors[i % colors.length]);
+        }
+
         var taskChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: <?= json_encode(array_keys($tasksPerYear)) ?>,
+                labels: labels,
                 datasets: [{
                     label: 'Tasks per Academic Year',
-                    data: <?= json_encode(array_values($tasksPerYear)) ?>,
-                    backgroundColor: 'rgba(26, 188, 156, 0.6)',
-                    borderColor: 'rgba(26, 188, 156, 1)',
+                    data: dataValues,
+                    backgroundColor: finalColors, // multiple colors :contentReference[oaicite:1]{index=1}
+                    borderColor: finalColors.map(c => c.replace('0.7', '1')),
                     borderWidth: 1
                 }]
             },
