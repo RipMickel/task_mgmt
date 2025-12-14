@@ -2,9 +2,10 @@
 session_start();
 require_once "../inc/config.php"; // Make sure $pdo is defined in config.php as a PDO instance
 require_once "../inc/functions.php";
+require_once "send_email.php"; // <<< Make sure sendEmailNotification() is defined here
 
 redirect_if_not_logged_in();
-if (!check_role('coordinator')) {
+if (!check_role('coordinator') && !check_role('admin')) {
     echo "Access Denied";
     exit;
 }
@@ -15,6 +16,7 @@ $success = "";
 
 /* Handle POST actions */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+
     $action = $_POST['action'];
 
     if ($action === 'create_subject') {
@@ -22,10 +24,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $subj_num = trim($_POST['subj_num'] ?? '');
         $subj_description = trim($_POST['subj_description'] ?? '');
         $subj_units_raw = trim($_POST['subj_units'] ?? '');
-        if ($subj_code === '' || $subj_num === '') $errors[] = "Subject code and subject number are required.";
-        if ($subj_units_raw === '') $errors[] = "Subject units is required.";
-        elseif (!is_numeric($subj_units_raw) || floatval($subj_units_raw) < 0) $errors[] = "Subject units must be a non-negative number.";
-        else $subj_units = number_format((float)$subj_units_raw, 2, '.', '');
+
+        if ($subj_code === '' || $subj_num === '') {
+            $errors[] = "Subject code and subject number are required.";
+        }
+
+        if ($subj_units_raw === '') {
+            $errors[] = "Subject units is required.";
+        } elseif (!is_numeric($subj_units_raw) || floatval($subj_units_raw) < 0) {
+            $errors[] = "Subject units must be a non-negative number.";
+        } else {
+            $subj_units = number_format((float)$subj_units_raw, 2, '.', '');
+        }
 
         if (empty($errors)) {
             try {
@@ -39,8 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 ]);
                 $success = "Subject created successfully.";
             } catch (PDOException $e) {
-                if ($e->getCode() == 23000) $errors[] = "Subject with that code/number already exists.";
-                else $errors[] = "Database error: " . $e->getMessage();
+                if ($e->getCode() == 23000) {
+                    $errors[] = "Subject with that code/number already exists.";
+                } else {
+                    $errors[] = "Database error: " . $e->getMessage();
+                }
             }
         }
     }
@@ -48,16 +61,104 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($action === 'assign_subject') {
         $subject_id = intval($_POST['subject_id'] ?? 0);
         $instructor_id = intval($_POST['instructor_id'] ?? 0);
-        if ($subject_id <= 0 || $instructor_id <= 0) $errors[] = "Please select both a subject and an instructor.";
-        else {
+
+        if ($subject_id <= 0 || $instructor_id <= 0) {
+            $errors[] = "Please select both a subject and a user.";
+        } else {
             try {
                 $check = $pdo->prepare("SELECT id FROM subject_assignments WHERE subject_id = :sid AND instructor_id = :iid");
                 $check->execute([':sid' => $subject_id, ':iid' => $instructor_id]);
-                if ($check->rowCount() > 0) $errors[] = "This subject is already assigned to the selected instructor.";
-                else {
+
+                if ($check->rowCount() > 0) {
+                    $errors[] = "This subject is already assigned to the selected user.";
+                } else {
                     $ins = $pdo->prepare("INSERT INTO subject_assignments (subject_id, instructor_id, coordinator_id) VALUES (:sid, :iid, :cid)");
                     $ins->execute([':sid' => $subject_id, ':iid' => $instructor_id, ':cid' => $coordinator_id]);
                     $success = "Subject assigned successfully.";
+
+                    // ---- EMAIL NOTIFICATION ----
+                    $userStmt = $pdo->prepare("SELECT email, name FROM users WHERE id = ?");
+                    $userStmt->execute([$instructor_id]);
+                    $assignedUser = $userStmt->fetch(PDO::FETCH_ASSOC);
+
+                    $subStmt = $pdo->prepare("SELECT subj_code, subj_num, subj_description FROM subjects WHERE subj_id = ?");
+                    $subStmt->execute([$subject_id]);
+                    $subjectInfo = $subStmt->fetch(PDO::FETCH_ASSOC);
+
+                    if ($assignedUser && !empty($assignedUser['email'])) {
+                        $to = $assignedUser['email'];
+                        $subjectEmail = "New Subject Assigned: " . htmlspecialchars($subjectInfo['subj_code'] . ' ' . $subjectInfo['subj_num']);
+
+                        $messageEmail = '
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF‑8">
+  <title>New Subject Assigned</title>
+</head>
+<body style="margin:0; padding:0; background:#f4f4f4; font-family:Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f4; padding:20px;">
+    <tr>
+      <td align="center">
+
+        <!-- Main container -->
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:8px; overflow:hidden;">
+
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background:#0c1b33; padding:20px;">
+              <h1 style="margin:0; color:#ffffff; font-size:24px;">Subject Assigned</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:20px; color:#333333; font-size:16px; line-height:1.5;">
+
+              <p>Hello ' . htmlspecialchars($assignedUser['name']) . ',</p>
+
+              <p>A new subject has been assigned to you by <strong>' . htmlspecialchars($_SESSION['name']) . '</strong>:</p>
+
+              <table width="100%" cellpadding="8" cellspacing="0" border="0" style="border:1px solid #dddddd; margin-top:10px;">
+                <tr style="background:#f9f9f9;">
+                  <td style="font-weight:bold;">Subject Code:</td>
+                  <td>' . htmlspecialchars($subjectInfo['subj_code']) . '</td>
+                </tr>
+                <tr>
+                  <td style="font-weight:bold;">Subject No.:</td>
+                  <td>' . htmlspecialchars($subjectInfo['subj_num']) . '</td>
+                </tr>
+                <tr style="background:#f9f9f9;">
+                  <td style="font-weight:bold;">Description:</td>
+                  <td>' . htmlspecialchars($subjectInfo['subj_description']) . '</td>
+                </tr>
+              </table>
+
+              <p style="margin-top:20px;">Please check your My Subjects for more details.</p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background:#f4f4f4; padding:15px; color:#555; font-size:12px;">
+              <p style="margin:0;">&copy; ' . date("Y") . ' ICS Department</p>
+              <p style="margin:0;">This is an automated message, please do not reply.</p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- End main container -->
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>';
+
+
+                        sendEmailNotification($to, $subjectEmail, $messageEmail); // uses your send_email.php function
+                    }
                 }
             } catch (PDOException $e) {
                 $errors[] = "Database error: " . $e->getMessage();
@@ -68,21 +169,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($action === 'remove_assignment' && isset($_POST['assignment_id'])) {
         $assignment_id = intval($_POST['assignment_id']);
         if ($assignment_id > 0) {
+            // Before deleting, get the instructor info to email
+            $getInfo = $pdo->prepare("
+                SELECT sa.instructor_id, u.email, u.name, s.subj_code, s.subj_num
+                FROM subject_assignments sa
+                JOIN users u ON sa.instructor_id = u.id
+                JOIN subjects s ON sa.subject_id = s.subj_id
+                WHERE sa.id = ?
+            ");
+            $getInfo->execute([$assignment_id]);
+            $info = $getInfo->fetch(PDO::FETCH_ASSOC);
+
             try {
                 $del = $pdo->prepare("DELETE FROM subject_assignments WHERE id = :aid");
                 $del->execute([':aid' => $assignment_id]);
-                $success = "Assignment removed.";
+                $success = "Subject removed.";
+
+                // ---- EMAIL NOTIFICATION (Removal) ----
+                if ($info && !empty($info['email'])) {
+                    $to2 = $info['email'];
+                    $subjectEmail2 = "Subject Assignment Removed: " . htmlspecialchars($info['subj_code'] . ' ' . $info['subj_num']);
+
+                    $messageEmail2 = '
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Subject Assignment Removed</title>
+</head>
+<body style="margin:0; padding:0; background:#f4f4f4; font-family:Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f4; padding:20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:8px; overflow:hidden;">
+        <tr>
+          <td align="center" style="background:#c0392b; padding:20px;">
+            <h1 style="margin:0; color:#ffffff; font-size:24px;">Subject Assignment Removed</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px; color:#333333; font-size:16px; line-height:1.5;">
+            <p>Hello ' . htmlspecialchars($info['name']) . ',</p>
+            <p>Your assignment for the subject <strong>' . htmlspecialchars($info['subj_code'] . ' ' . $info['subj_num']) . '</strong> has been removed by <strong>' . htmlspecialchars($_SESSION['name']) . '</strong>.</p>
+            <p>Please check your My Subjects for updates.</p>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="background:#f4f4f4; padding:15px; color:#555; font-size:12px;">
+            <p style="margin:0;">&copy; ' . date("Y") . ' ICS Department</p>
+            <p style="margin:0;">This is an automated message, please do not reply.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>';
+
+                    sendEmailNotification($to2, $subjectEmail2, $messageEmail2);
+                }
             } catch (PDOException $e) {
                 $errors[] = "Database error: " . $e->getMessage();
             }
-        } else $errors[] = "Invalid assignment id.";
+        } else {
+            $errors[] = "Invalid assignment id.";
+        }
     }
 }
 
-/* Fetch instructors */
+/* Fetch users (instructors + admins + coordinators) */
 $instructors = [];
 try {
-    $insRes = $pdo->query("SELECT id, name, email FROM users WHERE role = 'instructor' ORDER BY name");
+    $insRes = $pdo->query("
+        SELECT id, name, email, role 
+        FROM users 
+        WHERE role IN ('instructor','admin','coordinator')
+        ORDER BY role DESC, name
+    ");
     $instructors = $insRes->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
 }
@@ -98,7 +260,7 @@ try {
 /* Fetch assignments */
 $assignments = [];
 $sql = "SELECT sa.id AS assignment_id, s.subj_id, s.subj_code, s.subj_num, s.subj_description, s.subj_units,
-        u.id AS instructor_id, u.name AS instructor_name, sa.assigned_at
+        u.id AS instructor_id, u.name AS instructor_name, u.role AS instructor_role, sa.assigned_at
         FROM subject_assignments sa
         JOIN subjects s ON sa.subject_id = s.subj_id
         JOIN users u ON sa.instructor_id = u.id
@@ -108,16 +270,8 @@ try {
     $assignments = $res->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
 }
-
-/* Fetch unread messages count */
-$unreadMessages = 0;
-try {
-    $stmt = $pdo->prepare("SELECT COUNT(*) AS unread_count FROM messages WHERE receiver_id = :rid AND is_read = 0 AND sender_id IN (SELECT id FROM users WHERE role = 'instructor')");
-    $stmt->execute([':rid' => $coordinator_id]);
-    $unreadMessages = $stmt->fetchColumn();
-} catch (PDOException $e) {
-}
 ?>
+
 <!doctype html>
 <html lang="en">
 
@@ -138,7 +292,6 @@ try {
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
 
     <style>
-        /* Keep all your previous CSS intact */
         body {
             margin: 0;
             font-family: Arial, sans-serif;
@@ -151,11 +304,12 @@ try {
         }
 
         .sidebar {
-            width: 240px;
-            background: #2c3e50;
-            color: #fff;
-            padding: 20px 0;
-            flex-shrink: 0;
+            width: 260px;
+            background: #0c1b33;
+            color: white;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar h2 {
@@ -332,11 +486,16 @@ try {
             <h2>Coordinator Panel</h2>
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'view_task.php' ? 'active' : '' ?>"><a href="view_task.php">My Task</a></li>
+
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_task.php' ? 'active' : '' ?>"><a href="assign_task.php">Assign Task</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_subject.php' ? 'active' : '' ?>"><a href="assign_subject.php">Assign Subjects</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assigned_subjects.php' ? 'active' : '' ?>"><a href="assigned_subjects.php">My Subjects</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'completed_task.php' ? 'active' : '' ?>"><a href="completed_task.php">Completed Task</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'manage_instructors.php' ? 'active' : '' ?>"><a href="manage_instructors.php">List of Instructors</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_subject.php' ? 'active' : '' ?>"><a href="assign_subject.php">Assign Subjects</a></li>
+
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
+
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'chat_list.php' ? 'active' : '' ?>"><a href="chat_list.php">Feedback</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
@@ -380,7 +539,7 @@ try {
                 </div>
 
                 <div class="card">
-                    <h2>Assign Subject to Instructor</h2>
+                    <h2>Assign Subject to Instructor/User</h2>
                     <form method="post" action="">
                         <input type="hidden" name="action" value="assign_subject">
                         <div class="form-row">
@@ -394,19 +553,22 @@ try {
                                 <?php endforeach; ?>
                             </select>
 
-                            <label>Instructor</label>
+                            <label>Select User</label>
                             <select name="instructor_id" required>
-                                <option value="">-- Select instructor --</option>
+                                <option value="">-- Select user --</option>
                                 <?php foreach ($instructors as $i): ?>
-                                    <option value="<?= (int)$i['id'] ?>"><?= htmlspecialchars($i['name'] . ' (' . $i['email'] . ')') ?></option>
+                                    <option value="<?= (int)$i['id'] ?>">
+                                        <?= htmlspecialchars($i['name'] . ' (' . $i['role'] . ')') ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
 
                             <button type="submit">Assign</button>
                         </div>
-                        <div class="muted">If instructor not listed, create user with role = 'instructor'.</div>
+                        <div class="muted">If user not listed, create user with role = 'instructor', 'admin' or 'coordinator'.</div>
                     </form>
                 </div>
+
 
                 <!-- DATA TABLE BELOW FIRST TWO CONTAINERS -->
                 <div class="card">

@@ -142,6 +142,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <li><a href="dashboard.php">Dashboard</a></li>
                 <li><a href="view_task.php">My Task</a></li>
                 <li><a href="assign_task.php">Assign Task</a></li>
+                <li><a href="assign_subjects.php">Assign Subjects</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assigned_subjects.php' ? 'active' : '' ?>"><a href="assigned_subjects.php">My Subjects</a></li>
+
                 <li><a href="completed_task.php">Completed Task</a></li>
                 <li><a href="manage_instructors.php">List of Instructors</a></li>
                 <li class="active"><a href="edit_profile.php">Edit Profile</a></li>

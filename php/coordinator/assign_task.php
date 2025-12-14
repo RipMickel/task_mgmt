@@ -72,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </ul>
     </div>
     <p>Please check your dashboard for more details.</p>
-    <p>Regards,<br>Team</p>
+    <p>Regards,<br>Ics Department</p>
     <div class='footer'>
       <p>This is an automated message, please do not reply to this email.</p>
     </div>
@@ -232,6 +232,9 @@ $users = $user_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li><a href="dashboard.php">Dashboard</a></li>
                 <li><a href="view_task.php">My Task</a></li>
                 <li class="active"><a href="assign_task.php">Assign Task</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_subject.php' ? 'active' : '' ?>"><a href="assign_subject.php">Assign Subjects</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assigned_subjects.php' ? 'active' : '' ?>"><a href="assigned_subjects.php">My Subjects</a></li>
+
                 <li><a href="completed_task.php">Completed Task</a></li>
                 <li><a href="manage_instructors.php">List of Instructors</a></li>
                 <li><a href="edit_profile.php">Edit Profile</a></li>

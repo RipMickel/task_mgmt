@@ -226,7 +226,7 @@ $instructorTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="dashboard.php">Dashboard</a>
                 </li>
                 <li><a href="view_task.php">My Task</a></li>
-
+                <li><a href="assigned_subjects.php">My Subjects</a></li>
                 <li><a href="completed_task.php">Completed Task</a></li>
                 <li><a href="manage_users.php">Manage Users</a></li>
                 <li><a href="roles.php">Manage Roles</a></li>

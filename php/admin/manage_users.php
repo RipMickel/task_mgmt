@@ -134,6 +134,7 @@ $users = $pdo->query("SELECT * FROM users")->fetchAll();
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
                 <li><a href="view_task.php">My Task</a></li>
+                <li><a href="assigned_subjects.php">My Subjects</a></li>
 
                 <li><a href="completed_task.php">Completed Task</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'manage_users.php' ? 'active' : '' ?>">

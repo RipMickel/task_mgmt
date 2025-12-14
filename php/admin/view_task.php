@@ -221,7 +221,8 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <aside class="sidebar">
             <h2>Admin Panel</h2>
             <a href="dashboard.php">Dashboard</a>
-            <a class="<?= basename($_SERVER['PHP_SELF']) == 'view_task.php' ? 'active' : '' ?>" href="view_task.php">My Task</a>
+            <a href="view_task.php">My Task</a>
+            <a href="assigned_subjects.php">My Subjects</a>
             <a href="completed_task.php">Completed Task</a>
             <a href="manage_users.php">Manage Users</a>
             <a href="roles.php">Manage Roles</a>
