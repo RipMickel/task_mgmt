@@ -202,14 +202,13 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 <body>
     <div class="dashboard-container">
         <aside class="sidebar">
-            <h2>Instructor Panel</h2>
+            <h2>Instructor</h2>
             <ul>
-                <li><a href="dashboard.php">Dashboard</a></li>
-                <li><a href="task_history.php">My Completed Tasks</a></li>
-                <li class="active"><a href="edit_profile.php">Edit Profile</a></li>           
-                     <li><a href="assigned_subjects">Assigned Subjects</a></li>
-                <li><a href="instructor_chat_list.php">Feedback</a></li>
-
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">Completed Tasks</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assigned_subjects.php' ? 'active' : '' ?>"><a href="assigned_subjects.php">My Subjects</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'instructor_chat_list.php' ? 'active' : '' ?>"><a href="instructor_chat_list.php">Feedback</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>

@@ -31,6 +31,7 @@ try {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Assigned Subjects - Instructor</title>
@@ -55,22 +56,103 @@ try {
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
 
     <style>
-        body { margin: 0; font-family: 'Inter', sans-serif; background: #eef1f5; }
-        .dashboard-container { display: flex; height: 100vh; }
-        .sidebar { width: 260px; background: #0c1b33; color: white; padding: 30px 20px; display: flex; flex-direction: column; }
-        .sidebar h2 { text-align: center; font-weight: 700; margin-bottom: 30px; }
-        .sidebar ul { list-style: none; padding: 0; margin: 0; }
-        .sidebar a { display: block; padding: 12px 15px; text-decoration: none; color: #ddd; border-radius: 6px; margin-bottom: 10px; transition: 0.25s; }
-        .sidebar a:hover, .sidebar .active a { background: #1e2a47; color: #fff; }
-        .main-content { flex: 1; padding: 20px 30px; overflow-y: auto; }
-        .page-header { background: white; padding: 20px; border-radius: 10px; display: flex; align-items: center; gap: 20px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); margin-bottom: 20px; }
-        .page-header img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
-        table { background: white; border-radius: 10px !important; overflow: hidden; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); }
-        th, td { padding: 12px 15px; text-align: left; }
-        th { background: #0c1b33; color: white; }
-        .muted { color: #666; font-size: 13px; }
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: #eef1f5;
+        }
+
+        .dashboard-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #0c1b33;
+            color: white;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 12px 15px;
+            text-decoration: none;
+            color: #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            transition: 0.25s;
+        }
+
+        .sidebar a:hover,
+        .sidebar .active a {
+            background: #1e2a47;
+            color: #fff;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px 30px;
+            overflow-y: auto;
+        }
+
+        .page-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .page-header img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        table {
+            background: white;
+            border-radius: 10px !important;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background: #0c1b33;
+            color: white;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 13px;
+        }
     </style>
 </head>
+
 <body>
     <div class="dashboard-container">
         <aside class="sidebar">
@@ -78,7 +160,7 @@ try {
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'task_history.php' ? 'active' : '' ?>"><a href="task_history.php">Completed Tasks</a></li>
-                               <li class="<?= basename($_SERVER['PHP_SELF']) == 'assigned_subjects.php' ? 'active' : '' ?>"><a href="assigned_subjects.php">Assigned Subjects</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assigned_subjects.php' ? 'active' : '' ?>"><a href="assigned_subjects.php">My Subjects</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'instructor_chat_list.php' ? 'active' : '' ?>"><a href="instructor_chat_list.php">Feedback</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
@@ -128,7 +210,9 @@ try {
     <script>
         $(document).ready(function() {
             $('#subjectsTable').DataTable({
-                "order": [[5, "desc"]],
+                "order": [
+                    [5, "desc"]
+                ],
                 "pageLength": 10,
                 dom: 'Bfrtip',
                 buttons: [
@@ -144,4 +228,5 @@ try {
         });
     </script>
 </body>
+
 </html>
