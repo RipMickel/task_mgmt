@@ -74,10 +74,12 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .sidebar ul li a:hover,
-        .sidebar ul li.active a {
-            background: #34495e;
-            border-left: 4px solid #1abc9c;
+        .sidebar .active a {
+            background: #1abc9c;
+            border-left: 5px solid #16a085;
+            padding-left: 15px;
         }
+
 
         /* Main content */
         .main-content {
@@ -134,6 +136,8 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2>Admin Panel</h2>
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
+                <li><a href="view_task.php">My Task</a></li>
+
                 <li><a href="completed_task.php">Completed Task</a></li>
                 <li><a href="manage_users.php">Manage Users</a></li>
                 <li><a href="roles.php">Manage Roles</a></li>

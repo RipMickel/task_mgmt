@@ -178,7 +178,9 @@ $tasksPerYear = array_count_values($academicYears);
             <h2>Admin Panel</h2>
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
+                <li><a href="view_task.php">My Task</a></li>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'completed_task.php' ? 'active' : '' ?>">
+
                     <a href="completed_task.php">Completed Task</a>
                 </li>
                 <li><a href="manage_users.php">Manage Users</a></li>

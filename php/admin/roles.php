@@ -220,6 +220,8 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2>Admin Panel</h2>
             <ul>
                 <li><a href="dashboard.php">Dashboard</a></li>
+                <li><a href="view_task.php">My Task</a></li>
+
                 <li><a href="completed_task.php">Completed Task</a></li>
                 <li><a href="manage_users.php">Manage Users</a></li>
                 <li class="active"><a href="roles.php">Manage Roles</a></li>
