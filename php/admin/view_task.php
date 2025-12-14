@@ -111,28 +111,30 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <style>
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #eef1f5;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f6f9;
+            color: #333;
         }
 
         .dashboard-container {
             display: flex;
-            height: 100vh;
+            min-height: 100vh;
         }
 
         .sidebar {
-            width: 260px;
-            background: #0c1b33;
-            color: white;
-            padding: 30px 20px;
+            width: 250px;
+            background: #2c3e50;
+            color: #ecf0f1;
             display: flex;
             flex-direction: column;
+            padding: 20px 0;
         }
 
         .sidebar h2 {
             text-align: center;
-            font-weight: 700;
-            margin-bottom: 30px;
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            font-weight: bold;
         }
 
         .sidebar ul {
@@ -141,118 +143,135 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin: 0;
         }
 
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+
         .sidebar a {
             display: block;
-            padding: 12px 15px;
+            padding: 12px 20px;
+            color: #ecf0f1;
             text-decoration: none;
-            color: #ddd;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            transition: 0.25s;
+            transition: background 0.3s;
         }
 
         .sidebar a:hover,
         .sidebar .active a {
-            background: #1e2a47;
-            color: #fff;
+            background: #1abc9c;
+            border-left: 5px solid #16a085;
+            padding-left: 15px;
         }
 
         .main-content {
             flex: 1;
-            padding: 20px 30px;
-            overflow-y: auto;
+            padding: 30px;
         }
 
-        table {
+        .welcome-container {
+            display: flex;
+            align-items: center;
             background: white;
-            border-radius: 10px !important;
-            overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-            width: 100%;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .card h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .card p {
+            font-size: 24px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        table.dataTable thead th {
+            background: #2c3e50;
             color: white;
         }
 
-        .pending {
-            background: #f0ad4e;
-        }
-
-        .completed {
-            background: #5cb85c;
-        }
-
-        .btn {
-            padding: 7px 12px;
-            background: #007bff;
+        /* Print Button Styling */
+        .print-btn {
+            background-color: #16a085;
             color: white;
+            padding: 10px 20px;
+            font-size: 16px;
             border: none;
-            border-radius: 6px;
             cursor: pointer;
-            transition: 0.25s;
-        }
-
-        .btn:hover {
-            background: #0056b3;
-        }
-
-        .upload-box {
-            background: #f8f9fc;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 5px;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            padding: 10px;
-            margin-bottom: 15px;
+            margin-top: 20px;
             border-radius: 5px;
         }
 
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
+        .print-btn:hover {
+            background-color: #1abc9c;
         }
 
+        /* Modal styling */
         .modal {
             display: none;
             position: fixed;
-            z-index: 99999;
-            padding-top: 100px;
+            z-index: 1000;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.4);
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
         }
 
         .modal-content {
-            background: white;
-            margin: auto;
+            background-color: #fefefe;
+            margin: 10% auto;
             padding: 20px;
-            width: 500px;
-            border-radius: 10px;
-            animation: fadeIn .2s ease-in-out;
-            position: relative;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 8px;
         }
 
-        .close {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            font-size: 24px;
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
             cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: black;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
         }
     </style>
 </head>
@@ -263,12 +282,11 @@ $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2>Coordinator Panel</h2>
             <ul>
                 <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'view_task.php' ? 'active' : '' ?>"><a href="view_task.php">My Task</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_task.php' ? 'active' : '' ?>"><a href="assign_task.php">Assign Task</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'completed_task.php' ? 'active' : '' ?>"><a href="completed_task.php">Completed Task</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'manage_instructors.php' ? 'active' : '' ?>"><a href="manage_instructors.php">List of Instructors</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
-                <li class="<?= basename($_SERVER['PHP_SELF']) == 'chat_list.php' ? 'active' : '' ?>"><a href="chat_list.php">Feedback</a></li>
+                <li><a href="view_task.php">My Task</a></li>
+                <li><a href="completed_task.php">Completed Task</a></li>
+                <li><a href="manage_users.php">Manage Users</a></li>
+                <li><a href="roles.php">Manage Roles</a></li>
+                <li><a href="user_logs.php">Recent Logins</a></li>
                 <li><a href="../auth/logout.php">Logout</a></li>
             </ul>
         </aside>
