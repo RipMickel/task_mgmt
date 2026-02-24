@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . "/inc/config.php";
+require_once __DIR__ . "/includes/config.php";
 
 // PHPMailer
 require_once __DIR__ . "/PHPMailer/src/PHPMailer.php";

@@ -1,10 +1,10 @@
 <?php
 session_start();
-require_once "inc/config.php";
+require_once "includes/config.php";
 
 if (!isset($_SESSION['temp_user_id'])) {
     // User cannot verify without login attempt
-    header("Location: index.php");
+    header("Location: ../..index.php");
     exit;
 }
 
@@ -39,13 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Redirect by role
         switch ($user['role']) {
             case 'admin':
-                header("Location: admin/dashboard.php");
+                header("Location: app/admin/dashboard.php");
                 break;
             case 'coordinator':
-                header("Location: coordinator/dashboard.php");
+                header("Location: app/coordinator/dashboard.php");
                 break;
             case 'instructor':
-                header("Location: instructor/dashboard.php");
+                header("Location: app/instructor/dashboard.php");
                 break;
             default:
                 die("Unknown role.");

@@ -9,7 +9,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 session_start();
-require_once __DIR__ . "/inc/config.php"; // Database connection
+require_once __DIR__ . "/includes/config.php"; // Database connection
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
