@@ -3,7 +3,7 @@
         'name' => 'mickel/task_mgmt',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '56671af0f85f1b21549631d3a12ee81589ae656e',
+        'reference' => 'ad967c763951c16af05a15f447701cbff2da9c1b',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -58,7 +58,7 @@
         'mickel/task_mgmt' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '56671af0f85f1b21549631d3a12ee81589ae656e',
+            'reference' => 'ad967c763951c16af05a15f447701cbff2da9c1b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
