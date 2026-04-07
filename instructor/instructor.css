@@ -1,17 +1,27 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f4f4f4;
+    color: #000; /* Set default text color to black */
+}
+
+
 .dashboard-container {
     display: flex;
-    min-height: 100vh;
 }
 
 /* Sidebar */
 .sidebar {
     width: 220px;
-    background-color: #2c3e50;
-    color: #fff;
+    background-color: #fff; /* White background */
+    color: #000; /* Black text */
+    min-height: 100vh;
     padding: 20px;
+    border-right: 2px solid #ddd; /* Optional: adds a subtle border */
 }
 
 .sidebar h2 {
+    text-align: center;
     margin-bottom: 20px;
 }
 
@@ -25,14 +35,20 @@
 }
 
 .sidebar ul li a {
-    color: #fff;
+    color: #000; /* Default text color */
     text-decoration: none;
     transition: 0.2s;
 }
 
 .sidebar ul li a:hover {
-    color: #1abc9c;
+    color: #2e8b57; /* Forest Green on hover */
 }
+
+.sidebar ul li.active a {
+    color: #008000; 
+    font-weight: bold; /* Optional: makes the active link bold */
+}
+
 
 /* Main content */
 .main-content {
@@ -57,18 +73,14 @@
 }
 
 .tasks th {
-    background-color: #3498db;
-    color: #fff;
+    background-color: #f4f4f4;
+    color: black;
 }
 
 .btn {
     padding: 6px 12px;
-    background-color: #1abc9c;
-    color: #fff;
+    color: black;
     text-decoration: none;
     border-radius: 5px;
 }
 
-.btn:hover {
-    background-color: #16a085;
-}
