@@ -11,39 +11,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['name'] = $user['name'];
-        $_SESSION['profile_image'] = !empty($user['profile_image']) ? $user['profile_image'] : null;
 
+        // ✅ Only instructors require activation
+        if ($user['role'] === 'instructor' && $user['status'] !== 'active') {
+            $error = "Your account is still pending approval by a coordinator.";
+        } else {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['name'] = $user['name'];
+            $_SESSION['profile_image'] = !empty($user['profile_image']) ? $user['profile_image'] : null;
 
-        // Role-based redirection
-        switch ($user['role']) {
-            case 'admin':
-                header("Location: admin/dashboard.php");
-                break;
-            case 'coordinator':
-                header("Location: coordinator/dashboard.php");
-                break;
-            case 'instructor':
-                header("Location: instructor/dashboard.php");
-                break;
-            default:
-                $error = "Unknown role.";
+            // 🔥 Insert login log into user_logs
+            $logStmt = $pdo->prepare("INSERT INTO user_logs (user_id, action) VALUES (?, ?)");
+            $logStmt->execute([$user['id'], 'User logged in']);
+
+            // Role-based redirection
+            switch ($user['role']) {
+                case 'admin':
+                    header("Location: admin/dashboard.php");
+                    break;
+                case 'coordinator':
+                    header("Location: coordinator/dashboard.php");
+                    break;
+                case 'instructor':
+                    header("Location: instructor/dashboard.php");
+                    break;
+                default:
+                    $error = "Unknown role.";
+            }
+            exit;
         }
-        exit;
     } else {
         $error = "Invalid email or password";
     }
 }
 ?>
 
+
+
 <!DOCTYPE html>
 <html>
 
 <head>
     <title>Login</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/index.css">
 </head>
 
 <body>
@@ -60,7 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit">Login</button>
         </form>
 
-        <p>Don't have an account? <a href="auth/register.php" class="btn">Register Here</a></p>
     </div>
 
     <script src="assets/js/main.js"></script>

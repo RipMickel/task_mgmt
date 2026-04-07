@@ -9,46 +9,29 @@ body {
 .dashboard-container {
     display: flex;
 }
+  .sidebar h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-/* Sidebar */
-.sidebar {
-    width: 220px;
-    background-color: #fff; /* White background */
-    color: #000; /* Black text */
-    min-height: 100vh;
-    padding: 20px;
-    border-right: 2px solid #ddd; /* Optional: adds a subtle border */
-}
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
 
-.sidebar h2 {
-    text-align: center;
-    margin-bottom: 20px;
-}
+        .sidebar ul li {
+            margin: 15px 0;
+        }
 
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-}
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+        }
 
-.sidebar ul li {
-    margin: 15px 0;
-}
-
-.sidebar ul li a {
-    color: #000; /* Default text color */
-    text-decoration: none;
-    transition: 0.2s;
-}
-
-.sidebar ul li a:hover {
-    color: #2e8b57; /* Forest Green on hover */
-}
-
-.sidebar ul li.active a {
-    color: #008000; 
-    font-weight: bold; /* Optional: makes the active link bold */
-}
-
+        .sidebar ul li.active a {
+            font-weight: bold;
+            color: #ffd700;
+        }
 
 /* Main content */
 .main-content {

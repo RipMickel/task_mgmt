@@ -9,74 +9,315 @@ if (!check_role('coordinator')) {
     exit;
 }
 
-// Fetch instructors
-$instructors = $pdo->query("SELECT * FROM users WHERE role='instructor'")->fetchAll();
+// Fetch user counts by role
+$countStmt = $pdo->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
+$userCounts = $countStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Assign task
-if (isset($_POST['assign_task'])) {
-    $title = $_POST['title'];
-    $desc = $_POST['description'];
-    $assigned_to = $_POST['assigned_to'];
-    $date_assigned = date('Y-m-d');
-    $deadline = $_POST['deadline'];
-    $academic_year = $_POST['academic_year'];
-    $assigned_by = $_SESSION['user_id'];
-
-    $stmt = $pdo->prepare("INSERT INTO tasks (title,description,assigned_to,assigned_by,date_assigned,deadline,academic_year) VALUES (?,?,?,?,?,?,?)");
-    $stmt->execute([$title, $desc, $assigned_to, $assigned_by, $date_assigned, $deadline, $academic_year]);
+$roles = [];
+$counts = [];
+foreach ($userCounts as $row) {
+    $roles[] = ucfirst($row['role']);
+    $counts[] = $row['count'];
 }
 
-// Fetch tasks assigned by this coordinator
-$tasks = $pdo->prepare("SELECT t.*, u.name as instructor_name FROM tasks t JOIN users u ON t.assigned_to=u.id WHERE t.assigned_by=?");
-$tasks->execute([$_SESSION['user_id']]);
-$assigned_tasks = $tasks->fetchAll();
-?>
+// Fetch instructor task progress with deadlines
+$sql = "
+    SELECT 
+        u.name AS instructor_name,
+        t.title AS task_title,
+        t.deadline,
+        t.status,
+        t.created_at,
+        t.id AS task_id
+    FROM users u
+    LEFT JOIN tasks t ON u.id = t.assigned_to
+    WHERE u.role = 'instructor'
+    ORDER BY t.created_at DESC, u.name, t.deadline ASC
+";
+$stmt = $pdo->query($sql);
+$tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Compute overall progress summary
+$progressStmt = $pdo->query("
+    SELECT 
+        u.name AS instructor_name,
+        COUNT(t.id) AS total_tasks,
+        SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) AS completed_tasks
+    FROM users u
+    LEFT JOIN tasks t ON u.id = t.assigned_to
+    WHERE u.role = 'instructor'
+    GROUP BY u.id, u.name
+");
+$instructorProgress = $progressStmt->fetchAll(PDO::FETCH_ASSOC);
+?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
     <title>Coordinator Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 240px;
+            background: #2c3e50;
+            color: #fff;
+            padding: 20px 0;
+            flex-shrink: 0;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 20px;
+            letter-spacing: 1px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 10px 0;
+        }
+
+        .sidebar ul li a {
+            display: block;
+            padding: 12px 20px;
+            color: #ecf0f1;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        .sidebar ul li a:hover,
+        .sidebar ul li.active a {
+            background: #34495e;
+            border-left: 4px solid #1abc9c;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+        }
+
+        .welcome-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .welcome-container img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 2px solid #ddd;
+        }
+
+        .welcome-container h1 {
+            font-size: 22px;
+            margin: 0;
+        }
+
+        .cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .card h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .card p {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 40px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background: #2c3e50;
+            color: white;
+        }
+
+        tr.missed {
+            background-color: #ffe6e6;
+        }
+
+        .missed-cell {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
 </head>
 
 <body>
-    <h2>Welcome Coordinator, <?= $_SESSION['name'] ?></h2>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <h2>Coordinator Panel</h2>
+            <ul>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : '' ?>"><a href="dashboard.php">Dashboard</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'assign_task.php' ? 'active' : '' ?>"><a href="assign_task.php">Assign Task</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'completed_task.php' ? 'active' : '' ?>"><a href="completed_task.php">Completed Task</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'manage_instructors.php' ? 'active' : '' ?>"><a href="manage_instructors.php">List of Instructors</a></li>
+                <li class="<?= basename($_SERVER['PHP_SELF']) == 'edit_profile.php' ? 'active' : '' ?>"><a href="edit_profile.php">Edit Profile</a></li>
+                <li><a href="../auth/logout.php">Logout</a></li>
+            </ul>
+        </aside>
 
-    <h3>Assign New Task</h3>
-    <form method="post">
-        <input type="text" name="title" placeholder="Task Title" required><br>
-        <textarea name="description" placeholder="Task Description" required></textarea><br>
-        <select name="assigned_to" required>
-            <?php foreach ($instructors as $ins): ?>
-                <option value="<?= $ins['id'] ?>"><?= $ins['name'] ?></option>
-            <?php endforeach; ?>
-        </select><br>
-        <input type="date" name="deadline" required><br>
-        <input type="text" name="academic_year" placeholder="Academic Year (e.g. 2025-2026)" required><br>
-        <button type="submit" name="assign_task">Assign Task</button>
-    </form>
+        <main class="main-content">
+            <div class="welcome-container">
+                <?php
+                $profilePic = !empty($_SESSION['profile_image'])
+                    ? "../uploads/profiles/" . $_SESSION['profile_image']
+                    : "../assets/images/default.png";
+                ?>
+                <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" id="profile-pic" style="cursor:pointer;width:100px;height:100px;border-radius:50%;border:2px solid #ccc;object-fit:cover;">
+                <h1>Welcome, <?= htmlspecialchars($_SESSION['name']) ?> (Coordinator)</h1>
+                <form id="upload-form" action="upload_profile.php" method="POST" enctype="multipart/form-data" style="display:none;">
+                    <input type="file" name="profile_image" id="profile-input" accept="image/*">
+                </form>
+            </div>
 
-    <h3>Assigned Tasks</h3>
-    <table border="1">
-        <tr>
-            <th>Title</th>
-            <th>Instructor</th>
-            <th>Deadline</th>
-            <th>Status</th>
-            <th>Academic Year</th>
-        </tr>
-        <?php foreach ($assigned_tasks as $task): ?>
-            <tr>
-                <td><?= $task['title'] ?></td>
-                <td><?= $task['instructor_name'] ?></td>
-                <td><?= $task['deadline'] ?></td>
-                <td><?= $task['status'] ?></td>
-                <td><?= $task['academic_year'] ?></td>
-            </tr>
-        <?php endforeach; ?>
-    </table>
+            <script>
+                document.getElementById('profile-pic').addEventListener('click', function() {
+                    if (confirm('Do you want to add or change your profile image?')) {
+                        document.getElementById('profile-input').click();
+                    }
+                });
+                document.getElementById('profile-input').addEventListener('change', function() {
+                    if (this.files.length > 0) document.getElementById('upload-form').submit();
+                });
+            </script>
 
-    <a href="../auth/logout.php">Logout</a>
+
+            <!-- Instructor Task Progress -->
+            <div class="table-container">
+                <h2>Instructor Task Progress</h2>
+                <table id="progressTable" class="display">
+                    <thead>
+                        <tr>
+                            <th>Instructor</th>
+                            <th>Total Tasks</th>
+                            <th>Completed</th>
+                            <th>Progress (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($instructorProgress as $row):
+                            $progress = $row['total_tasks'] > 0 ? round(($row['completed_tasks'] / $row['total_tasks']) * 100, 1) : 0; ?>
+                            <tr>
+                                <td><?= htmlspecialchars($row['instructor_name']) ?></td>
+                                <td><?= $row['total_tasks'] ?></td>
+                                <td><?= $row['completed_tasks'] ?></td>
+                                <td><?= $progress ?>%</td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Task Deadlines & Missed Submissions -->
+            <div class="table-container">
+                <h2>Task Deadlines & Missed Submissions</h2>
+                <table id="tasksTable" class="display">
+                    <thead>
+                        <tr>
+                            <th>Instructor</th>
+                            <th>Task Title</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($tasks as $t):
+                            $isMissed = ($t['status'] != 'completed' && strtotime($t['deadline']) < time()); ?>
+                            <tr class="<?= $isMissed ? 'missed' : '' ?>">
+                                <td><?= htmlspecialchars($t['instructor_name']) ?></td>
+                                <td><?= htmlspecialchars($t['task_title'] ?: '—') ?></td>
+                                <td><?= htmlspecialchars($t['deadline'] ?: 'No deadline') ?></td>
+                                <td class="<?= $isMissed ? 'missed-cell' : '' ?>"><?= $isMissed ? 'Missed' : ucfirst($t['status'] ?: 'Pending') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#progressTable').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true
+            });
+
+            var tasksTable = $('#tasksTable').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true
+            });
+
+            // Auto-refresh tasks table every 5 seconds
+            setInterval(function() {
+                $.ajax({
+                    url: 'fetch_instructor_progress.php',
+                    method: 'GET',
+                    success: function(data) {
+                        tasksTable.clear().draw();
+                        tasksTable.rows.add($(data)).draw();
+                    }
+                });
+            }, 5000);
+        });
+    </script>
 </body>
 
 </html>
