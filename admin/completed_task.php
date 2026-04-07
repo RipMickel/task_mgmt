@@ -10,14 +10,25 @@ if (!check_role('admin')) {
 }
 
 // Handle academic year search
-$academicYear = isset($_GET['academic_year']) ? $_GET['academic_year'] : '';
+$academicYear = isset($_GET['academic_year']) ? trim($_GET['academic_year']) : '';
 
-$sql = "SELECT th.*, t.title as task_title, t.description as task_desc, t.academic_year,
-               u.name as instructor_name, uc.name as coordinator_name
-        FROM task_history th
-        JOIN tasks t ON th.task_id = t.id
-        JOIN users u ON t.assigned_to = u.id
-        JOIN users uc ON t.assigned_by = uc.id";
+// Explicitly select needed columns
+$sql = "
+    SELECT 
+        th.task_id,
+        th.completed_at,
+        th.file_path,
+        th.drive_link,
+        t.title AS task_title,
+        t.description AS task_desc,
+        t.academic_year,
+        u.name AS instructor_name,
+        uc.name AS coordinator_name
+    FROM task_history th
+    JOIN tasks t ON th.task_id = t.id
+    JOIN users u ON t.assigned_to = u.id
+    JOIN users uc ON t.assigned_by = uc.id
+";
 
 if ($academicYear) {
     $sql .= " WHERE t.academic_year = ? ORDER BY th.completed_at DESC";
@@ -28,7 +39,8 @@ if ($academicYear) {
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
 }
-$taskHistory = $stmt->fetchAll();
+
+$taskHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -114,6 +126,14 @@ $taskHistory = $stmt->fetchAll();
             background: #2c3e50;
             color: white;
         }
+
+        table tbody tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        table tbody tr:hover {
+            background: #f1f1f1;
+        }
     </style>
 </head>
 
@@ -136,6 +156,13 @@ $taskHistory = $stmt->fetchAll();
         <main class="main-content">
             <h1>Completed Task</h1>
 
+            <form method="GET" class="search-form">
+                <label for="academic_year">Search by Academic Year:</label>
+                <input type="text" id="academic_year" name="academic_year" placeholder="e.g. 2024-2025"
+                    value="<?= htmlspecialchars($academicYear) ?>">
+                <button type="submit">Search</button>
+                <a href="completed_task.php" class="btn">Clear</a>
+            </form>
 
             <?php if (count($taskHistory) > 0): ?>
                 <div class="table-container">
@@ -161,13 +188,15 @@ $taskHistory = $stmt->fetchAll();
                                     <td><?= htmlspecialchars($task['academic_year']) ?></td>
                                     <td><?= htmlspecialchars($task['completed_at']) ?></td>
                                     <td>
-                                        <?php if (!empty($task['file_path'])): ?>
-                                            <a href="../uploads/<?= htmlspecialchars($task['file_path']) ?>" target="_blank">
-                                                <?= htmlspecialchars($task['file_path']) ?>
-                                            </a>
-                                        <?php else: ?>
-                                            N/A
-                                        <?php endif; ?>
+                                        <?php
+                                        if (!empty($task['file_path'])) {
+                                            echo '<a href="../uploads/' . htmlspecialchars($task['file_path']) . '" target="_blank">View Uploaded File</a>';
+                                        } elseif (!empty($task['drive_link'])) {
+                                            echo '<a href="' . htmlspecialchars($task['drive_link']) . '" target="_blank">View Google Drive File</a>';
+                                        } else {
+                                            echo 'N/A';
+                                        }
+                                        ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -179,6 +208,7 @@ $taskHistory = $stmt->fetchAll();
             <?php endif; ?>
         </main>
     </div>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script>

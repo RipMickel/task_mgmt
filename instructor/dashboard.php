@@ -11,14 +11,17 @@ if (!check_role('instructor')) {
 
 // Fetch tasks assigned to this instructor
 $stmt = $pdo->prepare("
-    SELECT t.*, u.name as coordinator_name 
-    FROM tasks t 
-    JOIN users u ON t.assigned_by = u.id 
-    WHERE t.assigned_to = ? 
+    SELECT t.*, u.name as coordinator_name,
+           th.file_path, th.drive_link
+    FROM tasks t
+    JOIN users u ON t.assigned_by = u.id
+    LEFT JOIN task_history th ON th.task_id = t.id
+    WHERE t.assigned_to = ?
     ORDER BY 
-        CASE WHEN t.status = 'pending' THEN 0 ELSE 1 END,  /* pending first */
-        t.deadline DESC                                  /* then latest deadline */
+        CASE WHEN t.status = 'pending' THEN 0 ELSE 1 END,
+        t.deadline DESC
 ");
+
 $stmt->execute([$_SESSION['user_id']]);
 $tasks = $stmt->fetchAll();
 
